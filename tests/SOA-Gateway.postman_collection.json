@@ -1,0 +1,58 @@
+{
+  "info": {
+    "name": "SOA Gateway Demo",
+    "_postman_id": "00000000-0000-0000-0000-000000000000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Gateway Health",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/health"
+      }
+    },
+    {
+      "name": "Seed",
+      "request": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/seed"
+      }
+    },
+    {
+      "name": "List Documents",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/api/documents"
+      }
+    },
+    {
+      "name": "List Deadlines",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/api/deadlines"
+      }
+    },
+    {
+      "name": "Deadlines Today",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/api/deadlines/today"
+      }
+    },
+    {
+      "name": "List Hearings",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/api/hearings"
+      }
+    },
+    {
+      "name": "Process Summary",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/api/process/123/summary"
+      }
+    }
+  ]
+}

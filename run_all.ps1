@@ -1,0 +1,5 @@
+Start-Process python -ArgumentList "services\documents_service.py"
+Start-Process python -ArgumentList "services\deadlines_service.py"
+Start-Process python -ArgumentList "services\hearings_service.py"
+Start-Process python -ArgumentList "gateway\app.py"
+Write-Output "Services starting... Gateway on http://127.0.0.1:8000/ui"

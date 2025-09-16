@@ -1,0 +1,18 @@
+# VS Code REST Client / IntelliJ HTTP client
+GET http://127.0.0.1:8000/health
+
+### Seed
+POST http://127.0.0.1:8000/api/seed
+
+### Docs
+GET http://127.0.0.1:8000/api/documents
+
+### Deadlines
+GET http://127.0.0.1:8000/api/deadlines
+GET http://127.0.0.1:8000/api/deadlines/today
+
+### Hearings
+GET http://127.0.0.1:8000/api/hearings
+
+### Orchestration
+GET http://127.0.0.1:8000/api/process/123/summary

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>API Gateway - Teste Interativo</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:20px}
+    .container{max-width:1100px;margin:0 auto}
+    .header{text-align:center;margin-bottom:20px}
+    .header h1{font-size:28px;margin-bottom:6px}
+    .muted{color:#94a3b8}
+    .toolbar{display:flex;gap:10px;justify-content:center;margin:16px 0 22px}
+    button{background:#4f46e5;border:0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
+    button.secondary{background:#374151}
+    button:hover{filter:brightness(1.1)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:20px}
+    .card{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:16px}
+    .btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:10px}
+    .result{background:#0b1220;border:1px solid #1f2937;border-radius:10px;padding:12px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;max-height:360px;overflow:auto}
+    .ok{border-left:4px solid #22c55e}
+    .err{border-left:4px solid #ef4444}
+    code{background:#0b1220;padding:2px 6px;border-radius:6px;border:1px solid #1f2937}
+    .statusline{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#94a3b8;margin:10px 0 16px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 API Gateway - SOA Microserviços</h1>
+      <div class="muted">UI de teste servida pelo próprio gateway em <code>/ui</code></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="secondary" onclick="hit('/health','GET')">💚 Health</button>
+      <button onclick="hit('/api/seed','POST')">🌱 Popular com dados de exemplo (seed)</button>
+    </div>
+    <div id="status" class="statusline">Aguardando...</div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>📄 Documentos</h3>
+        <div class="btns">
+          <button onclick="hit('/api/documents','GET')">Listar Documentos</button>
+          <button onclick="hit('/api/documents','POST',{title:'Doc via UI',content:'...',author:'Erick'})">Criar Documento</button>
+          <button onclick="hit('/api/documents/INVALIDO','GET')">Buscar Documento (erro)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>⏰ Prazos</h3>
+        <div class="btns">
+          <button onclick="hit('/api/deadlines','GET')">Listar Prazos</button>
+          <button onclick="hit('/api/deadlines','POST',{process_id:'UI-01',due_date:new Date().toISOString().slice(0,10)})">Criar Prazo</button>
+          <button onclick="hit('/api/deadlines/today','GET')">Prazos de Hoje</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>👥 Audiências</h3>
+        <div class="btns">
+          <button onclick="hit('/api/audiences','GET')">Listar Audiências</button>
+          <button onclick="hit('/api/audiences','POST',{process_id:'UI-01',date:'2025-11-01',courtroom:'Sala 2'})">Agendar Audiência</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🔀 Orquestração</h3>
+        <div class="btns">
+          <button onclick="hit('/api/process/123/summary','GET')">Resumo do Processo 123</button>
+          <button onclick="hit('/api/orchestrate/file-case','POST',{
+            document:{title:'Inicial UI',content:'...',author:'Erick'},
+            deadline:{process_id:'UI-01',due_date:'2025-10-12'},
+            hearing:{process_id:'UI-01',date:'2025-11-01',courtroom:'Sala 2'}
+          })">Orquestrar (Criar tudo)</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="out" class="result"></div>
+  </div>
+
+<script>
+  async function hit(path, method="GET", body=null) {
+    const box = document.getElementById('out');
+    const status = document.getElementById('status');
+    box.className = 'result';
+    try {
+      const init = { method, headers: {} };
+      if (body) {
+        init.headers['Content-Type'] = 'application/json';
+        init.body = JSON.stringify(body);
+      }
+      const t0 = performance.now();
+      const res = await fetch(path, init);
+      const text = await res.text();
+      const ms = Math.round(performance.now() - t0);
+      let parsed;
+      try { parsed = JSON.parse(text); } catch { parsed = text; }
+      box.classList.add(res.ok ? 'ok' : 'err');
+      box.textContent = method + " " + path + " → " + res.status + " (" + ms + "ms)\n\n" + JSON.stringify(parsed, null, 2);
+      status.textContent = "Última resposta: " + res.status + " em " + ms + "ms";
+    } catch (e) {
+      box.classList.add('err');
+      box.textContent = method + ' ' + path + ' → ERROR\n\n' + e.message;
+      status.textContent = "Erro: " + e.message;
+    }
+  }
+  window.addEventListener('DOMContentLoaded', () => hit('/health','GET'));
+</script>
+</body>
+</html>
