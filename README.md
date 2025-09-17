@@ -29,21 +29,55 @@ soa-gateway-ready/
 
 ## Como executar
 
-Linux/macOS/WSL:
+### Execução Automatizada (Recomendado)
+
+Os scripts foram melhorados para automatizar todo o processo de setup:
+
+**Linux/macOS/WSL:**
 ```bash
-cd soa-gateway-ready
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+cd project_sd
 bash run_all.sh
 ```
-Windows (PowerShell):
+
+**Windows (PowerShell):**
 ```powershell
-cd soa-gateway-ready
+cd project_sd
+.\run_all.ps1
+```
+
+Os scripts automaticamente:
+- ✅ Verificam se Python 3.8+ está instalado
+- ✅ Criam o ambiente virtual (.venv)
+- ✅ Instalam todas as dependências
+- ✅ Verificam se as portas estão disponíveis
+- ✅ Criam arquivo .env a partir do template
+- ✅ Iniciam todos os serviços
+- ✅ Verificam se os serviços estão respondendo
+- ✅ Exibem informações úteis (URLs, usuários, comandos)
+
+### Execução Manual (se necessário)
+
+```bash
+cd project_sd
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate  # Linux/macOS
+# ou .\.venv\Scripts\Activate.ps1  # Windows
 pip install -r requirements.txt
-./run_all.ps1
+bash run_all.sh  # ou .\run_all.ps1
+```
+
+### Opções dos Scripts
+
+**Linux/macOS:**
+```bash
+bash run_all.sh  # Setup completo + execução
+```
+
+**Windows:**
+```powershell
+.\run_all.ps1           # Setup completo + execução
+.\run_all.ps1 -SkipSetup # Apenas execução (pula setup)
+.\run_all.ps1 -Help     # Exibe ajuda
 ```
 
 UI de testes: http://127.0.0.1:8000/ui  
@@ -66,30 +100,103 @@ pytest -q
 python -m pytest tests/test_integration.py -v
 ```
 
+## Segurança Implementada
+
+O API Gateway inclui os seguintes aspectos de segurança:
+
+### Autenticação JWT
+- Login: `POST /api/auth/login`
+- Tokens com expiração de 24h
+- Usuários de teste:
+  - `admin/admin123` (todas as permissões)
+  - `lawyer/lawyer123` (read, write, orchestrate)
+  - `intern/intern123` (apenas read)
+
+### Autorização RBAC
+- Sistema de roles e permissions
+- Controle de acesso por endpoint
+
+### Rate Limiting
+- Limites por IP e endpoint
+- Login: 5/minuto
+- Leitura: 30/minuto
+- Escrita: 10/minuto
+
+### Validação de Entrada
+- Schemas Marshmallow
+- Sanitização automática
+- Validação de tipos e formatos
+
+### Security Headers
+- Content Security Policy
+- Anti-clickjacking
+- CORS configurado
+
+### Logging e Auditoria
+- Eventos de segurança
+- Correlation IDs
+- Logs estruturados
+
 ## Endpoints (Gateway)
+
+### Autenticação
+- POST /api/auth/login — login e obtenção de token
+- GET /api/auth/me — informações do usuário atual
 
 - Health/UI/Seed
   - GET /health — status do gateway e URLs dos serviços
   - GET /ui — UI de testes
   - POST /api/seed — cria dados de exemplo
 
-- Documents
-  - GET /api/documents
-  - POST /api/documents
-  - GET /api/documents/<id>
+- Documents (requer autenticação)
+  - GET /api/documents — listar (requer: read)
+  - POST /api/documents — criar (requer: write)
+  - GET /api/documents/<id> — obter específico (requer: read)
 
-- Deadlines
-  - GET /api/deadlines
-  - POST /api/deadlines
-  - GET /api/deadlines/today
+- Deadlines (requer autenticação)
+  - GET /api/deadlines — listar (requer: read)
+  - POST /api/deadlines — criar (requer: write)
+  - GET /api/deadlines/today — prazos de hoje (requer: read)
 
-- Audiences (alias de hearings)
-  - GET /api/audiences
-  - POST /api/audiences
+- Hearings/Audiences (requer autenticação)
+  - GET /api/hearings — listar (requer: read)
+  - POST /api/hearings — criar (requer: write)
+  - GET /api/audiences — alias para hearings (requer: read)
+  - POST /api/audiences — alias para hearings (requer: write)
 
-- Orquestração
-  - GET /api/process/<id>/summary — agrega documentos/prazos/audiências
-  - POST /api/orchestrate/file-case — cria documento + prazo + audiência em uma chamada
+- Orchestration (requer autenticação)
+  - GET /api/process/<id>/summary — resumo do processo (requer: read)
+  - POST /api/orchestrate/file-case — criar caso completo (requer: orchestrate)
+
+## Exemplo de Uso com Autenticação
+
+```bash
+# 1. Login
+TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}' | \
+  jq -r '.token')
+
+# 2. Criar documento
+curl -X POST http://localhost:8000/api/documents \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Teste", "content": "Conteúdo", "author": "Admin"}'
+
+# 3. Listar documentos
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/documents
+```
+
+## Testes de Segurança
+
+```bash
+# Testes automatizados de segurança
+python -m pytest tests/test_security.py -v
+
+# Teste manual básico
+python tests/test_security.py
+```
 
 Serviços internos (acesso direto):
 - Documents: GET/POST /documents, GET /documents/<id> — :5001
