@@ -47,6 +47,7 @@
       <button onclick="hit('/api/seed','POST')">🌱 Popular com dados de exemplo (seed)</button>
       <button class="secondary" onclick="logout()">🚪 Sair</button>
     </div>
+    <div id="userInfo" class="muted" style="text-align:center;margin-bottom:18px"></div>
     <div id="status" class="statusline">Aguardando...</div>
 
     <div class="grid">
@@ -92,6 +93,28 @@
 <script>
   let jwtToken = null;
 
+  async function showUserInfo() {
+    const infoBox = document.getElementById('userInfo');
+    if (!jwtToken) {
+      infoBox.textContent = "";
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + jwtToken }
+      });
+      if (!res.ok) {
+        infoBox.textContent = "";
+        return;
+      }
+      const data = await res.json();
+      const user = data.user;
+      infoBox.textContent = `Usuário: ${user.username} | Papel: ${user.roles.join(', ')}`;
+    } catch {
+      infoBox.textContent = "";
+    }
+  }
+
   async function login() {
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
@@ -121,6 +144,7 @@
 
       // opcional: já chama health de início
       hit('/health','GET');
+      showUserInfo();
     } catch (e) {
       status.textContent = "Erro: " + e.message;
     }
@@ -162,7 +186,7 @@
       status.textContent = "Erro: " + e.message;
     }
   }
-  
+
   window.addEventListener('DOMContentLoaded', () => {
     const savedToken = localStorage.getItem("jwtToken");
     if (savedToken) {
