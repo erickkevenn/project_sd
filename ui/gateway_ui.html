@@ -4,37 +4,131 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>API Gateway - Teste Interativo</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:20px}
-    .container{max-width:1100px;margin:0 auto}
-    .header{text-align:center;margin-bottom:20px}
-    .header h1{font-size:28px;margin-bottom:6px}
-    .muted{color:#94a3b8}
-    .toolbar{display:flex;gap:10px;justify-content:center;margin:16px 0 22px}
-    button{background:#4f46e5;border:0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
-    button.secondary{background:#374151}
-    button:hover{filter:brightness(1.1)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:20px}
-    .card{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:16px}
-    .btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:10px}
-    .result{background:#0b1220;border:1px solid #1f2937;border-radius:10px;padding:12px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;max-height:360px;overflow:auto}
-    .ok{border-left:4px solid #22c55e}
-    .err{border-left:4px solid #ef4444}
-    code{background:#0b1220;padding:2px 6px;border-radius:6px;border:1px solid #1f2937}
-    .statusline{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#94a3b8;margin:10px 0 16px}
-  </style>
+  <link rel="stylesheet" href="/ui/styles.css">
 </head>
 <body>
   <div id="login" class="card" style="max-width:400px;margin:40px auto;">
     <h3>🔐 Login</h3>
-    <input id="username" type="text" placeholder="Usuário" style="width:100%;margin:8px 0;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#e2e8f0"/>
-    <input id="password" type="password" placeholder="Senha" style="width:100%;margin:8px 0;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#e2e8f0"/>
+    <input id="username" type="text" placeholder="Usuário" class="login-input" />
+    <input id="password" type="password" placeholder="Senha" class="login-input" />
     <button onclick="login()">Entrar</button>
     <div id="loginStatus" class="muted" style="margin-top:10px"></div>
   </div>
 
+  <!-- Modal para buscar documento -->
+  <div id="searchModal" class="modal" onclick="closeSearchModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">🔍 Buscar Documento</div>
+      <div class="info-text">Digite o ID do documento que deseja encontrar:</div>
+      <input type="text" id="docIdInput" class="modal-input" placeholder="Ex: a1b2c3d4" />
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeSearchModal()">Cancelar</button>
+        <button class="modal-btn primary" onclick="executeSearch()">Buscar</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- Modal para buscar processo -->
+  <div id="processModal" class="modal" onclick="closeProcessModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">🔍 Buscar Processo</div>
+      <div class="info-text">Digite o ID do processo para ver o resumo completo:</div>
+      <input type="text" id="processIdInput" class="modal-input" placeholder="Ex: PROC-001, UI-01" />
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeProcessModal()">Cancelar</button>
+        <button class="modal-btn primary" onclick="executeProcessSearch()">Buscar Resumo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para excluir documento -->
+  <div id="deleteModal" class="modal" onclick="closeDeleteModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">🗑️ Excluir Documento</div>
+      <div class="info-text">Digite o ID do documento que deseja excluir:</div>
+      <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+      <input type="text" id="deleteIdInput" class="modal-input" placeholder="Ex: a1b2c3d4" />
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeDeleteModal()">Cancelar</button>
+        <button class="modal-btn danger" onclick="executeDelete()">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para excluir prazo -->
+  <div id="deleteDeadlineModal" class="modal" onclick="closeDeleteDeadlineModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">🗑️ Excluir Prazo</div>
+      <div class="info-text">Digite o ID do prazo que deseja excluir:</div>
+      <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+      <input type="text" id="deleteDeadlineIdInput" class="modal-input" placeholder="Ex: a1b2c3d4" />
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeDeleteDeadlineModal()">Cancelar</button>
+        <button class="modal-btn danger" onclick="executeDeleteDeadline()">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para excluir audiência -->
+  <div id="deleteHearingModal" class="modal" onclick="closeDeleteHearingModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">🗑️ Cancelar Audiência</div>
+      <div class="info-text">Digite o ID da audiência que deseja cancelar:</div>
+      <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+      <input type="text" id="deleteHearingIdInput" class="modal-input" placeholder="Ex: a1b2c3d4" />
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeDeleteHearingModal()">Cancelar</button>
+        <button class="modal-btn danger" onclick="executeDeleteHearing()">Cancelar Audiência</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para criar documento -->
+  <div id="createDocumentModal" class="modal" onclick="closeCreateDocumentModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">📄 Criar Documento</div>
+      <div class="info-text">Preencha as informações do documento:</div>
+      <input type="text" id="docTitleInput" class="modal-input" placeholder="Título do documento" />
+      <textarea id="docContentInput" class="modal-input" placeholder="Conteúdo do documento" rows="4"></textarea>
+      <input type="text" id="docAuthorInput" class="modal-input" placeholder="Autor" />
+      <input type="text" id="docProcessIdInput" class="modal-input" placeholder="ID do Processo (opcional)" />
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeCreateDocumentModal()">Cancelar</button>
+        <button class="modal-btn primary" onclick="executeCreateDocument()">Criar Documento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para criar prazo -->
+  <div id="createDeadlineModal" class="modal" onclick="closeCreateDeadlineModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">⏰ Criar Prazo</div>
+      <div class="info-text">Preencha as informações do prazo:</div>
+      <input type="text" id="deadlineProcessIdInput" class="modal-input" placeholder="ID do Processo" />
+      <input type="date" id="deadlineDateInput" class="modal-input" />
+      <textarea id="deadlineDescInput" class="modal-input" placeholder="Descrição do prazo" rows="3"></textarea>
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeCreateDeadlineModal()">Cancelar</button>
+        <button class="modal-btn primary" onclick="executeCreateDeadline()">Criar Prazo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para agendar audiência -->
+  <div id="createHearingModal" class="modal" onclick="closeCreateHearingModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">🏛️ Agendar Audiência</div>
+      <div class="info-text">Preencha as informações da audiência:</div>
+      <input type="text" id="hearingProcessIdInput" class="modal-input" placeholder="ID do Processo" />
+      <input type="date" id="hearingDateInput" class="modal-input" />
+      <input type="text" id="hearingCourtroomInput" class="modal-input" placeholder="Sala da audiência" />
+      <textarea id="hearingDescInput" class="modal-input" placeholder="Descrição da audiência" rows="3"></textarea>
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" onclick="closeCreateHearingModal()">Cancelar</button>
+        <button class="modal-btn primary" onclick="executeCreateHearing()">Agendar Audiência</button>
+      </div>
+    </div>
+  </div>
 
   <div id="mainUI" style="display:none;" class="container">
     <div class="header">
@@ -43,8 +137,8 @@
     </div>
 
     <div class="toolbar">
-      <button class="secondary" onclick="hit('/health','GET')">💚 Health</button>
-      <button onclick="hit('/api/seed','POST')">🌱 Popular com dados de exemplo (seed)</button>
+      <button class="secondary" data-permission="read" onclick="hit('/health','GET')">💚 Health</button>
+      <button data-permission="write" onclick="hit('/api/seed','POST')">🌱 Popular com dados de exemplo (seed)</button>
       <button class="secondary" onclick="logout()">🚪 Sair</button>
     </div>
     <div id="userInfo" class="muted" style="text-align:center;margin-bottom:18px"></div>
@@ -54,148 +148,53 @@
       <div class="card">
         <h3>📄 Documentos</h3>
         <div class="btns">
-          <button onclick="hit('/api/documents','GET')">Listar Documentos</button>
-          <button onclick="hit('/api/documents','POST',{title:'Doc via UI',content:'...',author:'Erick'})">Criar Documento</button>
-          <button onclick="hit('/api/documents/INVALIDO','GET')">Buscar Documento (erro)</button>
+          <button data-permission="read" onclick="hit('/api/documents','GET')" title="Apenas lista os documentos existentes">📋 Listar Documentos</button>
+          <button data-permission="write" onclick="createDocument()" title="Cria um novo documento">➕ Criar Documento</button>
+          <button data-permission="read" onclick="searchDocument()" title="Busca um documento por ID">🔍 Buscar Documento</button>
+          <button data-permission="delete" onclick="deleteDocument()" title="Exclui um documento por ID">🗑️ Excluir Documento</button>
         </div>
       </div>
       <div class="card">
         <h3>⏰ Prazos</h3>
         <div class="btns">
-          <button onclick="hit('/api/deadlines','GET')">Listar Prazos</button>
-          <button onclick="hit('/api/deadlines','POST',{process_id:'UI-01',due_date:new Date().toISOString().slice(0,10)})">Criar Prazo</button>
-          <button onclick="hit('/api/deadlines/today','GET')">Prazos de Hoje</button>
+          <button data-permission="read" onclick="hit('/api/deadlines','GET')">Listar Prazos</button>
+          <button data-permission="write" onclick="createDeadlineModal()">Criar Prazo</button>
+          <button data-permission="read" onclick="hit('/api/deadlines/today','GET')">Prazos de Hoje</button>
+          <button data-permission="delete" onclick="deleteDeadline()">Excluir Prazo</button>
         </div>
       </div>
       <div class="card">
-        <h3>👥 Audiências</h3>
+        <h3>🏛️ Audiências</h3>
         <div class="btns">
-          <button onclick="hit('/api/hearings','GET')">Listar Audiências</button>
-          <button onclick="hit('/api/hearings','POST',{process_id:'UI-01',date:'2025-11-01',courtroom:'Sala 2'})">Agendar Audiência</button>
+          <button data-permission="read" onclick="hit('/api/hearings','GET')" title="Apenas lista as audiências existentes">📋 Listar Audiências</button>
+          <button data-permission="write" onclick="createHearingModal()" title="Agenda uma nova audiência">➕ Agendar Audiência</button>
+          <button data-permission="read" onclick="hit('/api/hearings/today','GET')" title="Lista audiências de hoje">📅 Audiências de Hoje</button>
+          <button data-permission="delete" onclick="deleteHearing()" title="Cancela uma audiência por ID">🗑️ Cancelar Audiência</button>
         </div>
       </div>
       <div class="card">
-        <h3>🔀 Orquestração</h3>
+        <h3>⚖️ Processos</h3>
         <div class="btns">
-          <button onclick="hit('/api/process/123/summary','GET')">Resumo do Processo 123</button>
-          <button onclick="hit('/api/orchestrate/file-case','POST',{
-            document:{title:'Inicial UI',content:'...',author:'Erick'},
-            deadline:{process_id:'UI-01',due_date:'2025-10-12'},
-            hearing:{process_id:'UI-01',date:'2025-11-01',courtroom:'Sala 2'}
-          })">Orquestrar (Criar tudo)</button>
+          <button data-permission="read" onclick="listProcesses()">Listar Processos</button>
+          <button data-permission="read" onclick="searchProcess()">Buscar Processo</button>
+          <button data-permission="orchestrate" onclick="orchestrateCase()">Orquestrar (Criar tudo)</button>
         </div>
       </div>
     </div>
 
-    <div id="out" class="result"></div>
+    <div class="card">
+      <div class="response-header">
+        <h3>📊 Resposta da API</h3>
+        <div>
+          <span id="responseMeta" class="response-meta"></span>
+          <button id="toggleView" class="toggle-view" onclick="toggleResponseView()" style="display:none;">📋 Tabela</button>
+        </div>
+      </div>
+      <div id="out" class="result">Nenhuma requisição ainda.</div>
+      <div id="tableView" style="display:none;"></div>
+    </div>
   </div>
 
-<script>
-  let jwtToken = null;
-
-  async function showUserInfo() {
-    const infoBox = document.getElementById('userInfo');
-    if (!jwtToken) {
-      infoBox.textContent = "";
-      return;
-    }
-    try {
-      const res = await fetch('/api/auth/me', {
-        headers: { 'Authorization': 'Bearer ' + jwtToken }
-      });
-      if (!res.ok) {
-        infoBox.textContent = "";
-        return;
-      }
-      const data = await res.json();
-      const user = data.user;
-      infoBox.textContent = `Usuário: ${user.username} | Papel: ${user.roles.join(', ')}`;
-    } catch {
-      infoBox.textContent = "";
-    }
-  }
-
-  async function login() {
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
-    const status = document.getElementById('loginStatus');
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user, password: pass })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        status.textContent = "❌ " + (data.error || "Falha no login");
-        return;
-      }
-
-      // guarda token
-      jwtToken = data.token;
-      localStorage.setItem("jwtToken", jwtToken);
-
-      // mostra a UI e esconde o login
-      document.getElementById('login').style.display = "none";
-      document.getElementById('mainUI').style.display = "block";
-      status.textContent = "";
-
-      // opcional: já chama health de início
-      hit('/health','GET');
-      showUserInfo();
-    } catch (e) {
-      status.textContent = "Erro: " + e.message;
-    }
-  }
-
-  function logout() {
-    jwtToken = null;
-    localStorage.removeItem("jwtToken");
-    document.getElementById('mainUI').style.display = "none";
-    document.getElementById('login').style.display = "block";
-    document.getElementById('loginStatus').textContent = "Você saiu da sessão.";
-  }
-
-  async function hit(path, method="GET", body=null) {
-    const box = document.getElementById('out');
-    const status = document.getElementById('status');
-    box.className = 'result';
-    try {
-      const init = { method, headers: {} };
-      if (body) {
-        init.headers['Content-Type'] = 'application/json';
-        init.body = JSON.stringify(body);
-      }
-      if (jwtToken) {
-        init.headers['Authorization'] = 'Bearer ' + jwtToken;
-      }
-      const t0 = performance.now();
-      const res = await fetch(path, init);
-      const text = await res.text();
-      const ms = Math.round(performance.now() - t0);
-      let parsed;
-      try { parsed = JSON.parse(text); } catch { parsed = text; }
-      box.classList.add(res.ok ? 'ok' : 'err');
-      box.textContent = method + " " + path + " → " + res.status + " (" + ms + "ms)\n\n" + JSON.stringify(parsed, null, 2);
-      status.textContent = "Última resposta: " + res.status + " em " + ms + "ms";
-    } catch (e) {
-      box.classList.add('err');
-      box.textContent = method + ' ' + path + ' → ERROR\n\n' + e.message;
-      status.textContent = "Erro: " + e.message;
-    }
-  }
-
-  window.addEventListener('DOMContentLoaded', () => {
-    const savedToken = localStorage.getItem("jwtToken");
-    if (savedToken) {
-      jwtToken = savedToken;
-      document.getElementById('login').style.display = "none";
-      document.getElementById('mainUI').style.display = "block";
-      hit('/health','GET');
-    }
-  });
-</script>
+  <script src="/ui/script.js"></script>
 </body>
 </html>

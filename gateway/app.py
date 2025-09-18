@@ -94,6 +94,25 @@ def register_routes(app, service_client, health_checker, limiter):
         """Serve a interface de usuário"""
         return send_from_directory(UI_DIR, "gateway_ui.html")
     
+    @app.route("/ui/<path:filename>")
+    def ui_static(filename):
+        """Serve arquivos estáticos da UI (CSS, JS, etc.)"""
+        from flask import Response
+        import mimetypes
+        
+        # Determina o tipo MIME baseado na extensão do arquivo
+        mimetype = mimetypes.guess_type(filename)[0]
+        if filename.endswith('.css'):
+            mimetype = 'text/css'
+        elif filename.endswith('.js'):
+            mimetype = 'application/javascript'
+        
+        response = send_from_directory(UI_DIR, filename)
+        if mimetype:
+            response.headers['Content-Type'] = mimetype
+        
+        return response
+    
     @app.route("/favicon.ico")
     def favicon():
         """Favicon vazio"""
@@ -206,6 +225,20 @@ def register_routes(app, service_client, health_checker, limiter):
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code
     
+    @app.delete("/api/documents/<doc_id>")
+    @require_auth
+    @require_permission("delete")
+    @limiter.limit("10 per minute")
+    def delete_document(doc_id):
+        """Remove um documento específico"""
+        try:
+            response_data, status_code = service_client.forward_request(
+                "documents", "DELETE", f"/documents/{doc_id}"
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+    
     # === Rotas de Prazos ===
     @app.get("/api/deadlines")
     @require_auth
@@ -250,6 +283,20 @@ def register_routes(app, service_client, health_checker, limiter):
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code
     
+    @app.delete("/api/deadlines/<deadline_id>")
+    @require_auth
+    @require_permission("delete")
+    @limiter.limit("10 per minute")
+    def delete_deadline(deadline_id):
+        """Remove um prazo específico"""
+        try:
+            response_data, status_code = service_client.forward_request(
+                "deadlines", "DELETE", f"/deadlines/{deadline_id}"
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+    
     # === Rotas de Audiências ===
     @app.get("/api/hearings")
     @require_auth
@@ -265,6 +312,20 @@ def register_routes(app, service_client, health_checker, limiter):
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code
     
+    @app.get("/api/hearings/today")
+    @require_auth
+    @require_permission("read")
+    @limiter.limit("30 per minute")
+    def hearings_today():
+        """Lista audiências de hoje"""
+        try:
+            response_data, status_code = service_client.forward_request(
+                "hearings", "GET", "/hearings/today"
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+    
     @app.post("/api/hearings")
     @require_auth
     @require_permission("write")
@@ -275,6 +336,20 @@ def register_routes(app, service_client, health_checker, limiter):
         try:
             response_data, status_code = service_client.forward_request(
                 "hearings", "POST", "/hearings", json_body=request.validated_data
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+    
+    @app.delete("/api/hearings/<hearing_id>")
+    @require_auth
+    @require_permission("delete")
+    @limiter.limit("10 per minute")
+    def delete_hearing(hearing_id):
+        """Remove uma audiência específica"""
+        try:
+            response_data, status_code = service_client.forward_request(
+                "hearings", "DELETE", f"/hearings/{hearing_id}"
             )
             return jsonify(response_data), status_code
         except GatewayException as e:

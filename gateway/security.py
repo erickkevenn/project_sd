@@ -52,13 +52,13 @@ class DocumentSchema(Schema):
 class DeadlineSchema(Schema):
     """Schema para validação de prazos"""
     process_id = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    due_date = fields.Date(required=True)
+    due_date = fields.Str(required=True)  # Aceita string de data no formato YYYY-MM-DD
     description = fields.Str(missing="")
 
 class HearingSchema(Schema):
     """Schema para validação de audiências"""
     process_id = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    date = fields.Date(required=True)
+    date = fields.Str(required=True)  # Aceita string de data no formato YYYY-MM-DD
     courtroom = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
     description = fields.Str(missing="")
 
@@ -180,10 +180,11 @@ def validate_json(schema_class):
     return decorator
 
 def sanitize_input(data):
-    """Sanitiza entrada removendo caracteres perigosos"""
+    """Sanitiza entrada removendo apenas caracteres realmente perigosos"""
     if isinstance(data, str):
-        # Remove caracteres potencialmente perigosos
-        dangerous_chars = ['<', '>', '"', "'", '&', '\x00']
+        # Remove apenas caracteres de controle e caracteres nulos
+        # Mantém aspas e outros caracteres necessários para JSON
+        dangerous_chars = ['<', '>', '\x00']
         for char in dangerous_chars:
             data = data.replace(char, '')
         return data.strip()
