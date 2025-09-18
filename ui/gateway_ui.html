@@ -26,7 +26,17 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="login" class="card" style="max-width:400px;margin:40px auto;">
+    <h3>🔐 Login</h3>
+    <input id="username" type="text" placeholder="Usuário" style="width:100%;margin:8px 0;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#e2e8f0"/>
+    <input id="password" type="password" placeholder="Senha" style="width:100%;margin:8px 0;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#e2e8f0"/>
+    <button onclick="login()">Entrar</button>
+    <div id="loginStatus" class="muted" style="margin-top:10px"></div>
+  </div>
+
+
+
+  <div id="mainUI" style="display:none;" class="container">
     <div class="header">
       <h1>🚀 API Gateway - SOA Microserviços</h1>
       <div class="muted">UI de teste servida pelo próprio gateway em <code>/ui</code></div>
@@ -35,6 +45,7 @@
     <div class="toolbar">
       <button class="secondary" onclick="hit('/health','GET')">💚 Health</button>
       <button onclick="hit('/api/seed','POST')">🌱 Popular com dados de exemplo (seed)</button>
+      <button class="secondary" onclick="logout()">🚪 Sair</button>
     </div>
     <div id="status" class="statusline">Aguardando...</div>
 
@@ -79,6 +90,50 @@
   </div>
 
 <script>
+  let jwtToken = null;
+
+  async function login() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    const status = document.getElementById('loginStatus');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        status.textContent = "❌ " + (data.error || "Falha no login");
+        return;
+      }
+
+      // guarda token
+      jwtToken = data.token;
+      localStorage.setItem("jwtToken", jwtToken);
+
+      // mostra a UI e esconde o login
+      document.getElementById('login').style.display = "none";
+      document.getElementById('mainUI').style.display = "block";
+      status.textContent = "";
+
+      // opcional: já chama health de início
+      hit('/health','GET');
+    } catch (e) {
+      status.textContent = "Erro: " + e.message;
+    }
+  }
+
+  function logout() {
+    jwtToken = null;
+    localStorage.removeItem("jwtToken");
+    document.getElementById('mainUI').style.display = "none";
+    document.getElementById('login').style.display = "block";
+    document.getElementById('loginStatus').textContent = "Você saiu da sessão.";
+  }
+
   async function hit(path, method="GET", body=null) {
     const box = document.getElementById('out');
     const status = document.getElementById('status');
@@ -88,6 +143,9 @@
       if (body) {
         init.headers['Content-Type'] = 'application/json';
         init.body = JSON.stringify(body);
+      }
+      if (jwtToken) {
+        init.headers['Authorization'] = 'Bearer ' + jwtToken;
       }
       const t0 = performance.now();
       const res = await fetch(path, init);
@@ -104,7 +162,16 @@
       status.textContent = "Erro: " + e.message;
     }
   }
-  window.addEventListener('DOMContentLoaded', () => hit('/health','GET'));
+  
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedToken = localStorage.getItem("jwtToken");
+    if (savedToken) {
+      jwtToken = savedToken;
+      document.getElementById('login').style.display = "none";
+      document.getElementById('mainUI').style.display = "block";
+      hit('/health','GET');
+    }
+  });
 </script>
 </body>
 </html>
