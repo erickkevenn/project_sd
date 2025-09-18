@@ -222,8 +222,6 @@ curl -H "Authorization: Bearer <token>" \
 ### Audiências
 - `GET /api/hearings` - Listar audiências (requer: read)
 - `POST /api/hearings` - Criar audiência (requer: write)
-- `GET /api/audiences` - Alias para hearings (requer: read)
-- `POST /api/audiences` - Alias para hearings (requer: write)
 
 ### Orquestração
 - `GET /api/process/{id}/summary` - Resumo do processo (requer: read)
