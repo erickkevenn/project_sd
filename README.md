@@ -158,11 +158,9 @@ O API Gateway inclui os seguintes aspectos de segurança:
   - POST /api/deadlines — criar (requer: write)
   - GET /api/deadlines/today — prazos de hoje (requer: read)
 
-- Hearings/Audiences (requer autenticação)
+- Hearings (requer autenticação)
   - GET /api/hearings — listar (requer: read)
   - POST /api/hearings — criar (requer: write)
-  - GET /api/audiences — alias para hearings (requer: read)
-  - POST /api/audiences — alias para hearings (requer: write)
 
 - Orchestration (requer autenticação)
   - GET /api/process/<id>/summary — resumo do processo (requer: read)
@@ -220,12 +218,12 @@ curl http://127.0.0.1:8000/api/documents
 curl http://127.0.0.1:8000/api/deadlines/today
 
 # Criar audiência
-curl -X POST http://127.0.0.1:8000/api/audiences \
+curl -X POST http://127.0.0.1:8000/api/hearings \
   -H "Content-Type: application/json" \
   -d '{"process_id":"0001","date":"2025-11-01","courtroom":"Sala 2"}'
 
 # Listar audiências
-curl http://127.0.0.1:8000/api/audiences
+curl http://127.0.0.1:8000/api/hearings
 ```
 
 ## Postman (opcional)
