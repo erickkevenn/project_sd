@@ -1,0 +1,10 @@
+# Dependências gRPC opcionais
+# Instale apenas se quiser usar gRPC: pip install -r requirements-grpc.txt
+
+grpcio>=1.50.0
+grpcio-tools>=1.50.0  
+protobuf>=4.21.0
+
+# Para Windows, você pode tentar versões pré-compiladas:
+# pip install --only-binary=grpcio grpcio
+# pip install --only-binary=grpcio-tools grpcio-tools

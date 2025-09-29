@@ -13,8 +13,8 @@ from flask_talisman import Talisman
 
 # Imports locais
 from config import get_config
-from middleware import setup_middleware
-from services import ServiceClient, HealthChecker
+from middleware import setup_middleware, protocol_selector
+from services import ServiceClient, HealthChecker, GrpcClient
 from security import (
     require_auth, require_permission, require_role, validate_json,
     LoginSchema, DocumentSchema, DeadlineSchema, HearingSchema,
@@ -73,14 +73,15 @@ def create_app():
     
     # Serviços
     service_client = ServiceClient()
+    grpc_client = GrpcClient()
     health_checker = HealthChecker(service_client)
     
     # Registra rotas
-    register_routes(app, service_client, health_checker, limiter)
+    register_routes(app, service_client, grpc_client, health_checker, limiter)
     
     return app
 
-def register_routes(app, service_client, health_checker, limiter):
+def register_routes(app, service_client, grpc_client, health_checker, limiter):
     """Registra todas as rotas da aplicação"""
     
     # === Rotas de UI ===
@@ -124,6 +125,19 @@ def register_routes(app, service_client, health_checker, limiter):
         """Endpoint de health check"""
         try:
             health_info = health_checker.check_all_services()
+            
+            # Adiciona informações sobre gRPC se disponível
+            try:
+                if grpc_client.is_available():
+                    health_info["grpc"] = {
+                        "status": "available",
+                        "services": list(grpc_client.channels.keys())
+                    }
+                else:
+                    health_info["grpc"] = {"status": "unavailable"}
+            except Exception:
+                health_info["grpc"] = {"status": "unavailable"}
+            
             status_code = 200 if health_info["status"] == "healthy" else 503
             return jsonify(health_info), status_code
         except Exception as e:
@@ -185,13 +199,20 @@ def register_routes(app, service_client, health_checker, limiter):
     @app.get("/api/documents")
     @require_auth
     @require_permission("read")
+    @protocol_selector()
     @limiter.limit("30 per minute")
     def list_documents():
         """Lista todos os documentos"""
         try:
-            response_data, status_code = service_client.forward_request(
-                "documents", "GET", "/documents"
-            )
+            # Verifica se deve usar gRPC
+            if getattr(request, 'prefer_grpc', False) and grpc_client.is_available('documents'):
+                response_data, status_code = grpc_client.call_service(
+                    "documents", "ListItems", {"limit": 100, "offset": 0}
+                )
+            else:
+                response_data, status_code = service_client.forward_request(
+                    "documents", "GET", "/documents"
+                )
             return jsonify(response_data), status_code
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code
@@ -200,13 +221,20 @@ def register_routes(app, service_client, health_checker, limiter):
     @require_auth
     @require_permission("write")
     @validate_json(DocumentSchema)
+    @protocol_selector()
     @limiter.limit("10 per minute")
     def create_document():
         """Cria um novo documento"""
         try:
-            response_data, status_code = service_client.forward_request(
-                "documents", "POST", "/documents", json_body=request.validated_data
-            )
+            # Verifica se deve usar gRPC
+            if getattr(request, 'prefer_grpc', False) and grpc_client.is_available('documents'):
+                response_data, status_code = grpc_client.call_service(
+                    "documents", "CreateItem", request.validated_data
+                )
+            else:
+                response_data, status_code = service_client.forward_request(
+                    "documents", "POST", "/documents", json_body=request.validated_data
+                )
             return jsonify(response_data), status_code
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code

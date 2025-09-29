@@ -24,6 +24,15 @@ class Config:
         "hearings": os.getenv("HEARINGS_URL", "http://127.0.0.1:5003"),
     }
     
+    # Configurações gRPC
+    GRPC_ENABLED = os.getenv("GRPC_ENABLED", "true").lower() == "true"
+    GRPC_SERVICES = {
+        "documents": os.getenv("DOCUMENTS_GRPC_URL", "127.0.0.1:50001"),
+        "deadlines": os.getenv("DEADLINES_GRPC_URL", "127.0.0.1:50002"),
+        "hearings": os.getenv("HEARINGS_GRPC_URL", "127.0.0.1:50003"),
+    }
+    GRPC_TIMEOUT = int(os.getenv("GRPC_TIMEOUT", "5"))
+    
     # Timeouts e limites
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "5"))
     
