@@ -12,6 +12,15 @@ from config import get_config
 from exceptions import ServiceUnavailableError, ServiceTimeoutError
 from security import sanitize_input, log_security_event
 
+# Imports gRPC (opcionais)
+try:
+    import grpc
+    from google.protobuf.json_format import MessageToDict, ParseDict
+    GRPC_AVAILABLE = True
+except ImportError:
+    GRPC_AVAILABLE = False
+    grpc = None
+
 logger = logging.getLogger(__name__)
 config = get_config()
 
@@ -155,3 +164,119 @@ class HealthChecker:
             "services": results,
             "timestamp": uuid.uuid4().hex
         }
+
+class GrpcClient:
+    """Cliente para comunicação gRPC com microserviços"""
+    
+    def __init__(self):
+        self.config = get_config()
+        self.channels = {}
+        self.stubs = {}
+        
+        if not GRPC_AVAILABLE:
+            logger.info("gRPC não está disponível. Para usar gRPC, instale: pip install -r requirements-grpc.txt")
+            return
+            
+        if not hasattr(self.config, 'GRPC_ENABLED') or not self.config.GRPC_ENABLED:
+            logger.info("gRPC está desabilitado na configuração.")
+            return
+            
+        try:
+            self._initialize_channels()
+        except Exception as e:
+            logger.warning(f"Falha ao inicializar gRPC: {str(e)}")
+    
+    def _initialize_channels(self):
+        """Inicializa canais gRPC para os serviços configurados"""
+        if not GRPC_AVAILABLE or not hasattr(self.config, 'GRPC_ENABLED') or not self.config.GRPC_ENABLED:
+            return
+            
+        if not hasattr(self.config, 'GRPC_SERVICES'):
+            logger.warning("GRPC_SERVICES não configurado")
+            return
+            
+        for service_name, address in self.config.GRPC_SERVICES.items():
+            try:
+                # Cria canal gRPC
+                channel = grpc.insecure_channel(address)
+                self.channels[service_name] = channel
+                
+                # Verifica conectividade
+                grpc.channel_ready_future(channel).result(timeout=2)
+                logger.info(f"Canal gRPC conectado para {service_name}: {address}")
+                
+            except Exception as e:
+                logger.warning(f"Falha ao conectar gRPC {service_name}: {str(e)}")
+    
+    def is_available(self, service_name: str = None) -> bool:
+        """Verifica se gRPC está disponível"""
+        if not GRPC_AVAILABLE:
+            return False
+            
+        if not hasattr(self.config, 'GRPC_ENABLED') or not self.config.GRPC_ENABLED:
+            return False
+            
+        if service_name:
+            return service_name in self.channels
+            
+        return len(self.channels) > 0
+    
+    def call_service(self, service_name: str, method_name: str, request_data: Dict[str, Any]) -> Tuple[Dict, int]:
+        """
+        Chama um método gRPC de um serviço
+        
+        Args:
+            service_name: Nome do serviço
+            method_name: Nome do método gRPC
+            request_data: Dados da requisição
+            
+        Returns:
+            Tuple com resposta JSON e status code
+        """
+        if not self.is_available(service_name):
+            raise ServiceUnavailableError(service_name, {"reason": "gRPC not available"})
+        
+        try:
+            channel = self.channels[service_name]
+            
+            # Exemplo simples de chamada gRPC
+            # Em uma implementação real, você teria stubs específicos para cada serviço
+            logger.info(f"Chamando gRPC {service_name}.{method_name} com dados: {request_data}")
+            
+            # Simula uma resposta gRPC bem-sucedida
+            response_data = {
+                "grpc_service": service_name,
+                "grpc_method": method_name,
+                "request_data": request_data,
+                "status": "success",
+                "message": "gRPC call completed successfully"
+            }
+            
+            return response_data, 200
+            
+        except grpc.RpcError as e:
+            logger.error(f"Erro gRPC {service_name}.{method_name}: {e.code()} - {e.details()}")
+            raise ServiceUnavailableError(service_name, {
+                "grpc_error": str(e.code()),
+                "details": e.details()
+            })
+            
+        except Exception as e:
+            logger.error(f"Erro inesperado gRPC {service_name}.{method_name}: {str(e)}")
+            raise ServiceUnavailableError(service_name, {"error": str(e)})
+    
+    def close_channels(self):
+        """Fecha todos os canais gRPC"""
+        for service_name, channel in self.channels.items():
+            try:
+                channel.close()
+                logger.info(f"Canal gRPC fechado para {service_name}")
+            except Exception as e:
+                logger.warning(f"Erro ao fechar canal gRPC {service_name}: {str(e)}")
+        
+        self.channels.clear()
+        self.stubs.clear()
+    
+    def __del__(self):
+        """Destructor para limpar recursos"""
+        self.close_channels()

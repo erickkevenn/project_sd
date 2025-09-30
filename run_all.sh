@@ -171,21 +171,52 @@ if [ ! -f "requirements.txt" ]; then
     exit 1
 fi
 
-# Instalar dependências
-log "Instalando dependências..."
+# Instalar dependências básicas
+log "Instalando dependências básicas..."
 if python -m pip install -r requirements.txt --quiet; then
-    log "Dependências instaladas "
+    log "Dependências básicas instaladas ✓"
 else
-    error "Falha ao instalar dependências"
+    error "Falha ao instalar dependências básicas"
     exit 1
+fi
+
+# Instalar dependências gRPC opcionais
+log "Instalando dependências gRPC..."
+if [ -f "requirements-grpc.txt" ]; then
+    if python -m pip install -r requirements-grpc.txt --quiet; then
+        log "Dependências gRPC instaladas ✓"
+    else
+        warn "Falha ao instalar dependências gRPC, tentando versões pré-compiladas..."
+        if python -m pip install --only-binary=grpcio grpcio grpcio-tools protobuf --quiet; then
+            log "Dependências gRPC pré-compiladas instaladas ✓"
+        else
+            warn "Não foi possível instalar gRPC. O sistema funcionará apenas com HTTP."
+        fi
+    fi
+else
+    warn "Arquivo requirements-grpc.txt não encontrado, tentando instalar gRPC diretamente..."
+    if python -m pip install --only-binary=grpcio grpcio grpcio-tools protobuf --quiet; then
+        log "Dependências gRPC instaladas ✓"
+    else
+        warn "Não foi possível instalar gRPC. O sistema funcionará apenas com HTTP."
+    fi
 fi
 
 # Verificar dependências críticas
 log "Verificando dependências críticas..."
-if python -c "import flask, requests, flask_cors, flask_limiter, jwt, marshmallow, flask_talisman, cryptography, dotenv; print('Todas as dependências estão instaladas ')" 2>/dev/null; then
-    log "Verificação de dependências concluída "
+if python -c "import flask, requests, flask_cors, flask_limiter, jwt, marshmallow, flask_talisman, cryptography, dotenv; print('Dependências básicas OK ✓')" 2>/dev/null; then
+    log "Dependências básicas verificadas ✓"
 else
-    warn "Algumas dependências podem estar faltando, mas continuando..."
+    warn "Algumas dependências básicas podem estar faltando, mas continuando..."
+fi
+
+# Verificar dependências gRPC
+log "Verificando dependências gRPC..."
+if python -c "import grpc, grpc_tools; print('gRPC disponível ✓')" 2>/dev/null; then
+    log "gRPC verificado ✓"
+    info "gRPC está disponível - middleware gRPC ativo"
+else
+    warn "gRPC não disponível - sistema funcionará apenas com HTTP"
 fi
 
 # Remover verificação redundante

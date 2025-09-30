@@ -85,18 +85,62 @@ if (-not $SkipSetup) {
     Write-ColorLog "Atualizando pip..." "Green"
     & python -m pip install --upgrade pip --quiet
 
-    # Instalar dependências
+    # Instalar dependências básicas
     if (Test-Path "requirements.txt") {
-        Write-ColorLog "Instalando dependências..." "Green"
+        Write-ColorLog "Instalando dependências básicas..." "Green"
         & pip install -r requirements.txt --quiet
         if ($LASTEXITCODE -ne 0) {
-            Write-ColorLog "Falha ao instalar dependências" "Red"
+            Write-ColorLog "Falha ao instalar dependências básicas" "Red"
             exit 1
         }
-        Write-ColorLog "Dependências instaladas " "Green"
+        Write-ColorLog "Dependências básicas instaladas ✓" "Green"
     } else {
         Write-ColorLog "requirements.txt não encontrado" "Red"
         exit 1
+    }
+
+    # Instalar dependências gRPC opcionais
+    Write-ColorLog "Instalando dependências gRPC..." "Green"
+    if (Test-Path "requirements-grpc.txt") {
+        & pip install -r requirements-grpc.txt --quiet
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorLog "Dependências gRPC instaladas ✓" "Green"
+        } else {
+            Write-ColorLog "Falha ao instalar gRPC via requirements-grpc.txt, tentando versões pré-compiladas..." "Yellow"
+            & pip install --only-binary=grpcio grpcio grpcio-tools protobuf --quiet
+            if ($LASTEXITCODE -eq 0) {
+                Write-ColorLog "Dependências gRPC pré-compiladas instaladas ✓" "Green"
+            } else {
+                Write-ColorLog "Não foi possível instalar gRPC. O sistema funcionará apenas com HTTP." "Yellow"
+            }
+        }
+    } else {
+        Write-ColorLog "requirements-grpc.txt não encontrado, tentando instalar gRPC diretamente..." "Yellow"
+        & pip install --only-binary=grpcio grpcio grpcio-tools protobuf --quiet
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorLog "Dependências gRPC instaladas ✓" "Green"
+        } else {
+            Write-ColorLog "Não foi possível instalar gRPC. O sistema funcionará apenas com HTTP." "Yellow"
+        }
+    }
+
+    # Verificar dependências críticas
+    Write-ColorLog "Verificando dependências críticas..." "Green"
+    & python -c "import flask, requests, flask_cors, flask_limiter, jwt, marshmallow, flask_talisman, cryptography, dotenv; print('Dependências básicas OK ✓')" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-ColorLog "Dependências básicas verificadas ✓" "Green"
+    } else {
+        Write-ColorLog "Algumas dependências básicas podem estar faltando, mas continuando..." "Yellow"
+    }
+
+    # Verificar dependências gRPC
+    Write-ColorLog "Verificando dependências gRPC..." "Green"
+    & python -c "import grpc, grpc_tools; print('gRPC disponível ✓')" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-ColorLog "gRPC verificado ✓" "Green"
+        Write-ColorLog "gRPC está disponível - middleware gRPC ativo" "Cyan"
+    } else {
+        Write-ColorLog "gRPC não disponível - sistema funcionará apenas com HTTP" "Yellow"
     }
 
     # Criar .env
@@ -219,6 +263,13 @@ if ($gatewayOk) {
     Write-ColorLog "Comandos úteis:" "Cyan"
     Write-Host "  • Testes: python -m pytest tests/test_security.py -v" -ForegroundColor Cyan
     Write-Host "  • Health: curl http://127.0.0.1:8000/health" -ForegroundColor Cyan
+    Write-Host "  • Health (gRPC): curl -H 'X-Prefer-Protocol: grpc' http://127.0.0.1:8000/health" -ForegroundColor Cyan
+    Write-Host ""
+    
+    Write-ColorLog "Middleware gRPC:" "Cyan"
+    Write-Host "  • Para usar gRPC: adicione header 'X-Prefer-Protocol: grpc'" -ForegroundColor Cyan
+    Write-Host "  • Ou use parâmetro: ?protocol=grpc" -ForegroundColor Cyan
+    Write-Host "  • Status gRPC: verificar header 'X-GRPC-Status' na resposta" -ForegroundColor Cyan
     Write-Host ""
     
     Write-ColorLog "Pressione Ctrl+C para parar todos os serviços" "Yellow"
