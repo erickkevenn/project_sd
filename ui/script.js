@@ -8,6 +8,151 @@ let lastResponseMeta = null;
 
 console.log('[DEBUG] Script.js carregado com sucesso!');
 
+// === FUNÇÕES DE NAVEGAÇÃO ===
+
+function showLanding() {
+  document.getElementById('landingPage').style.display = 'block';
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('registerPage').style.display = 'none';
+  document.getElementById('mainUI').style.display = 'none';
+}
+
+function showLogin() {
+  document.getElementById('landingPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'block';
+  document.getElementById('registerPage').style.display = 'none';
+  document.getElementById('mainUI').style.display = 'none';
+  
+  // Limpa os campos
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('loginStatus').textContent = '';
+  
+  // Foca no campo de usuário
+  setTimeout(() => document.getElementById('username').focus(), 100);
+}
+
+function showRegister() {
+  document.getElementById('landingPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('registerPage').style.display = 'block';
+  document.getElementById('mainUI').style.display = 'none';
+  
+  // Limpa os campos
+  const fields = ['officeName', 'cnpj', 'responsibleName', 'oabNumber', 'email', 'phone', 'newUsername', 'newPassword', 'confirmPassword'];
+  fields.forEach(field => {
+    const element = document.getElementById(field);
+    if (element) element.value = '';
+  });
+  document.getElementById('userType').value = '';
+  document.getElementById('acceptTerms').checked = false;
+  document.getElementById('registerStatus').textContent = '';
+  
+  // Redefine a exibição do campo OAB
+  setTimeout(() => {
+    toggleOabField();
+    document.getElementById('officeName').focus();
+  }, 100);
+}
+
+function showMainSystem() {
+  document.getElementById('landingPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('registerPage').style.display = 'none';
+  document.getElementById('mainUI').style.display = 'block';
+}
+
+// Função para controlar a exibição do campo OAB
+function toggleOabField() {
+  const userType = document.getElementById('userType').value;
+  const oabGroup = document.getElementById('oabNumber').parentElement;
+  const oabInput = document.getElementById('oabNumber');
+  const oabLabel = oabGroup.querySelector('label');
+  
+  if (userType === 'estagiario') {
+    // Oculta o campo OAB para estagiários
+    oabGroup.classList.add('hidden');
+    oabInput.value = '';
+    oabInput.removeAttribute('required');
+  } else if (userType === 'advogado') {
+    // Mostra o campo OAB para advogados (obrigatório)
+    oabGroup.classList.remove('hidden');
+    oabInput.setAttribute('required', 'required');
+    oabLabel.textContent = 'Número da OAB *';
+  } else {
+    // Estado padrão - mostra o campo mas não obrigatório
+    oabGroup.classList.remove('hidden');
+    oabInput.removeAttribute('required');
+    oabLabel.textContent = 'Número da OAB';
+  }
+}
+
+// Função de cadastro
+async function register() {
+  const status = document.getElementById('registerStatus');
+  
+  // Coleta os dados do formulário
+  const data = {
+    officeName: document.getElementById('officeName').value.trim(),
+    cnpj: document.getElementById('cnpj').value.trim(),
+    responsibleName: document.getElementById('responsibleName').value.trim(),
+    oabNumber: document.getElementById('oabNumber').value.trim(),
+    userType: document.getElementById('userType').value,
+    email: document.getElementById('email').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    username: document.getElementById('newUsername').value.trim(),
+    password: document.getElementById('newPassword').value,
+    confirmPassword: document.getElementById('confirmPassword').value,
+    acceptTerms: document.getElementById('acceptTerms').checked
+  };
+  
+  // Validações
+  if (!data.officeName || !data.cnpj || !data.responsibleName || !data.userType ||
+      !data.email || !data.phone || !data.username || !data.password) {
+    status.className = 'auth-status error';
+    status.textContent = 'Por favor, preencha todos os campos obrigatórios.';
+    return;
+  }
+  
+  // Validação específica para advogados
+  if (data.userType === 'advogado' && !data.oabNumber) {
+    status.className = 'auth-status error';
+    status.textContent = 'Número da OAB é obrigatório para advogados.';
+    return;
+  }
+  
+  if (data.password !== data.confirmPassword) {
+    status.className = 'auth-status error';
+    status.textContent = 'As senhas não coincidem.';
+    return;
+  }
+  
+  if (data.password.length < 8) {
+    status.className = 'auth-status error';
+    status.textContent = 'A senha deve ter pelo menos 8 caracteres.';
+    return;
+  }
+  
+  if (!data.acceptTerms) {
+    status.className = 'auth-status error';
+    status.textContent = 'Você deve aceitar os termos de uso e política de privacidade.';
+    return;
+  }
+  
+  // Simulação de cadastro (em uma implementação real, enviaria para o backend)
+  status.className = 'auth-status success';
+  const userTypeText = data.userType === 'advogado' ? 'Advogado' : 'Estagiário';
+  status.textContent = `Cadastro realizado com sucesso como ${userTypeText}! Redirecionando para o login...`;
+  
+  setTimeout(() => {
+    showLogin();
+    document.getElementById('username').value = data.username;
+    const loginStatus = document.getElementById('loginStatus');
+    loginStatus.className = 'auth-status success';
+    loginStatus.textContent = 'Cadastro concluído! Agora faça login com suas credenciais.';
+  }, 2000);
+}
+
 // === FUNÇÕES DE AUTENTICAÇÃO E USUÁRIO ===
 
 async function showUserInfo() {
@@ -71,6 +216,12 @@ async function login() {
   const pass = document.getElementById('password').value;
   const status = document.getElementById('loginStatus');
 
+  if (!user || !pass) {
+    status.className = 'auth-status error';
+    status.textContent = 'Por favor, preencha usuário e senha.';
+    return;
+  }
+
   try {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -80,7 +231,8 @@ async function login() {
     const data = await res.json();
 
     if (!res.ok) {
-      status.textContent = "❌ " + (data.error || "Falha no login");
+      status.className = 'auth-status error';
+      status.textContent = data.error || "Falha no login";
       return;
     }
 
@@ -88,9 +240,8 @@ async function login() {
     jwtToken = data.token;
     localStorage.setItem("jwtToken", jwtToken);
 
-    // mostra a UI e esconde o login
-    document.getElementById('login').style.display = "none";
-    document.getElementById('mainUI').style.display = "block";
+    // mostra o sistema principal
+    showMainSystem();
     status.textContent = "";
 
     // Chama showUserInfo para aplicar controle de permissões
@@ -99,6 +250,7 @@ async function login() {
     // opcional: já chama health de início
     hit('/health','GET');
   } catch (e) {
+    status.className = 'auth-status error';
     status.textContent = "Erro: " + e.message;
   }
 }
@@ -106,9 +258,7 @@ async function login() {
 function logout() {
   jwtToken = null;
   localStorage.removeItem("jwtToken");
-  document.getElementById('mainUI').style.display = "none";
-  document.getElementById('login').style.display = "block";
-  document.getElementById('loginStatus').textContent = "Você saiu da sessão.";
+  showLanding();
   
   // Reset controle de permissões
   showUserInfo();
@@ -957,12 +1107,27 @@ window.addEventListener('DOMContentLoaded', async () => {
   const savedToken = localStorage.getItem("jwtToken");
   if (savedToken) {
     jwtToken = savedToken;
-    document.getElementById('login').style.display = "none";
-    document.getElementById('mainUI').style.display = "block";
+    showMainSystem();
     
     // Aplica controle de permissões
     await showUserInfo();
     
     hit('/health','GET');
+  } else {
+    // Mostra a landing page por padrão
+    showLanding();
   }
+  
+  // Adiciona listeners para tecla Enter nos formulários
+  document.getElementById('password').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      login();
+    }
+  });
+  
+  document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      register();
+    }
+  });
 });

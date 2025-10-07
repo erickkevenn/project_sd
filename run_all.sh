@@ -125,26 +125,51 @@ fi
 # Ativar ambiente virtual
 log "Ativando ambiente virtual..."
 
-# Detectar se estamos no Git Bash (Windows) ou Linux/macOS
-if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "${MSYSTEM:-}" ]]; then
-    # Git Bash no Windows
+# Detectar sistema operacional de forma mais robusta
+detect_os() {
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "${MSYSTEM:-}" ]]; then
+        echo "windows"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "linux"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macos"
+    elif [[ -n "${WINDIR:-}" ]] || [[ -n "${windir:-}" ]]; then
+        echo "windows"
+    else
+        echo "unix"
+    fi
+}
+
+OS_TYPE=$(detect_os)
+info "Sistema detectado: $OS_TYPE"
+
+# Ativar ambiente virtual baseado no sistema
+if [[ "$OS_TYPE" == "windows" ]]; then
+    # Windows (Git Bash, MSYS2, Cygwin)
     if [ -f ".venv/Scripts/activate" ]; then
         source .venv/Scripts/activate
         info "Usando ativação do Windows (Scripts/activate)"
     elif [ -f ".venv/bin/activate" ]; then
         source .venv/bin/activate
-        info "Usando ativação Unix (bin/activate)"
+        info "Usando ativação Unix (bin/activate) no Windows"
     else
         error "Script de ativação não encontrado"
+        info "Tentando encontrar arquivos de ativação..."
+        find .venv -name "activate*" -type f 2>/dev/null || true
         exit 1
     fi
 else
-    # Linux/macOS
+    # Linux/macOS/Unix
     if [ -f ".venv/bin/activate" ]; then
         source .venv/bin/activate
         info "Usando ativação Unix (bin/activate)"
+    elif [ -f ".venv/Scripts/activate" ]; then
+        source .venv/Scripts/activate
+        info "Usando ativação Windows (Scripts/activate) no Unix"
     else
         error "Script de ativação não encontrado"
+        info "Tentando encontrar arquivos de ativação..."
+        find .venv -name "activate*" -type f 2>/dev/null || true
         exit 1
     fi
 fi
@@ -248,9 +273,32 @@ log "Todos os arquivos necessários encontrados "
 # Verificar se as portas estão disponíveis
 check_port() {
     local port=$1
-    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-        return 1
+    # Tentar diferentes métodos para verificar portas ocupadas
+    if command -v lsof >/dev/null 2>&1; then
+        # Método preferido: lsof (disponível na maioria dos sistemas Unix)
+        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+            return 1
+        else
+            return 0
+        fi
+    elif command -v netstat >/dev/null 2>&1; then
+        # Fallback: netstat (mais universal)
+        if netstat -ln 2>/dev/null | grep -q ":$port "; then
+            return 1
+        else
+            return 0
+        fi
+    elif command -v ss >/dev/null 2>&1; then
+        # Alternativa moderna: ss
+        if ss -ln 2>/dev/null | grep -q ":$port "; then
+            return 1
+        else
+            return 0
+        fi
     else
+        # Se nenhum comando estiver disponível, assumir que a porta está livre
+        warn "Comandos de verificação de porta não encontrados (lsof, netstat, ss)"
+        warn "Assumindo que a porta $port está livre"
         return 0
     fi
 }
@@ -324,24 +372,59 @@ sleep 2
 # Verificar se os serviços iniciaram corretamente
 log "Verificando se os serviços estão respondendo..."
 
-check_service() {
-    local url=$1
-    local name=$2
-    local max_attempts=10
-    local attempt=1
+# Verificar se curl está disponível
+if ! command -v curl >/dev/null 2>&1; then
+    warn "curl não encontrado. Tentando instalar ou usando alternativas..."
     
-    while [ $attempt -le $max_attempts ]; do
-        if curl -s --connect-timeout 2 "$url" > /dev/null 2>&1; then
-            log "$name está respondendo "
+    # Tentar usar wget como alternativa
+    if command -v wget >/dev/null 2>&1; then
+        info "Usando wget como alternativa ao curl"
+        check_service() {
+            local url=$1
+            local name=$2
+            local max_attempts=10
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+                if wget --quiet --spider --timeout=2 "$url" 2>/dev/null; then
+                    log "$name está respondendo ✓"
+                    return 0
+                fi
+                sleep 1
+                ((attempt++))
+            done
+            
+            error "$name não está respondendo após $max_attempts tentativas"
+            return 1
+        }
+    else
+        warn "Nem curl nem wget estão disponíveis. Pulando verificação de saúde dos serviços."
+        check_service() {
+            local name=$2
+            warn "Não foi possível verificar $name (curl/wget não disponíveis)"
             return 0
-        fi
-        sleep 1
-        ((attempt++))
-    done
-    
-    error "$name não está respondendo após $max_attempts tentativas"
-    return 1
-}
+        }
+    fi
+else
+    check_service() {
+        local url=$1
+        local name=$2
+        local max_attempts=10
+        local attempt=1
+        
+        while [ $attempt -le $max_attempts ]; do
+            if curl -s --connect-timeout 2 "$url" > /dev/null 2>&1; then
+                log "$name está respondendo ✓"
+                return 0
+            fi
+            sleep 1
+            ((attempt++))
+        done
+        
+        error "$name não está respondendo após $max_attempts tentativas"
+        return 1
+    }
+fi
 
 # Verificar serviços (com timeout)
 SERVICES_OK=true
