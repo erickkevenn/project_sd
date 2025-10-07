@@ -3,16 +3,210 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>API Gateway - Teste Interativo</title>
+  <title>JurisFlow - Plataforma de Orquestração Jurídica</title>
   <link rel="stylesheet" href="/ui/styles.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-  <div id="login" class="card" style="max-width:400px;margin:40px auto;">
-    <h3>🔐 Login</h3>
-    <input id="username" type="text" placeholder="Usuário" class="login-input" />
-    <input id="password" type="password" placeholder="Senha" class="login-input" />
-    <button onclick="login()">Entrar</button>
-    <div id="loginStatus" class="muted" style="margin-top:10px"></div>
+  <!-- Tela Inicial -->
+  <div id="landingPage" class="landing-page">
+    <nav class="landing-nav">
+      <div class="nav-content">
+        <div class="logo">
+          <div class="logo-image">
+            <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.src='/ui/logo.svg'" />
+          </div>
+          <span>JurisFlow</span>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-secondary" onclick="showLogin()">Entrar</button>
+          <button class="btn-primary" onclick="showRegister()">Cadastrar Escritório</button>
+        </div>
+      </div>
+    </nav>
+    
+    <main class="landing-main">
+      <section class="hero">
+        <div class="hero-content">
+          <h1>Coordenação e Orquestração de Tarefas Jurídicas</h1>
+          <p class="hero-subtitle">Otimize a execução das atividades do seu escritório com nossa plataforma inteligente de orquestração</p>
+          
+          <div class="hero-features">
+            <div class="feature">
+              <i class="fas fa-file-alt"></i>
+              <h3>Gerenciamento de Documentos</h3>
+              <p>Organize e controle todos os documentos jurídicos de forma centralizada</p>
+            </div>
+            <div class="feature">
+              <i class="fas fa-clock"></i>
+              <h3>Controle de Prazos</h3>
+              <p>Nunca mais perca um prazo importante com nosso sistema de alertas inteligente</p>
+            </div>
+            <div class="feature">
+              <i class="fas fa-gavel"></i>
+              <h3>Organização de Audiências</h3>
+              <p>Gerencie audiências e compromissos com eficiência e precisão</p>
+            </div>
+          </div>
+          
+          <div class="hero-actions">
+            <button class="btn-primary-large" onclick="showRegister()">Começar Agora</button>
+            <button class="btn-secondary-large" onclick="showLogin()">Já tenho conta</button>
+          </div>
+        </div>
+      </section>
+      
+      <section class="benefits">
+        <div class="benefits-content">
+          <h2>Por que escolher o JurisFlow?</h2>
+          <div class="benefits-grid">
+            <div class="benefit">
+              <i class="fas fa-cogs"></i>
+              <h4>Orquestração Inteligente</h4>
+              <p>Sistema que distribui tarefas de forma eficiente entre os setores especializados</p>
+            </div>
+            <div class="benefit">
+              <i class="fas fa-shield-alt"></i>
+              <h4>Segurança Avançada</h4>
+              <p>Controle de acesso baseado em permissões para proteger informações sensíveis</p>
+            </div>
+            <div class="benefit">
+              <i class="fas fa-chart-line"></i>
+              <h4>Produtividade</h4>
+              <p>Aumente a eficiência do seu escritório com automação e controle centralizado</p>
+            </div>
+            <div class="benefit">
+              <i class="fas fa-users"></i>
+              <h4>Colaboração</h4>
+              <p>Facilite o trabalho em equipe com ferramentas de colaboração integradas</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Tela de Login -->
+  <div id="loginPage" class="auth-page" style="display:none;">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="logo-large">
+          <div class="logo-image">
+            <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.src='/ui/logo.svg'" />
+          </div>
+          <span>JurisFlow</span>
+        </div>
+        <h2>Acesso ao Sistema</h2>
+        <p>Entre com suas credenciais para acessar a plataforma</p>
+      </div>
+      
+      <form class="auth-form" onsubmit="return false;">
+        <div class="form-group">
+          <label for="username">Usuário</label>
+          <input id="username" type="text" placeholder="Digite seu usuário" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Senha</label>
+          <input id="password" type="password" placeholder="Digite sua senha" class="form-input" />
+        </div>
+        
+        <button type="button" class="btn-primary-full" onclick="login()">Entrar no Sistema</button>
+        
+        <div id="loginStatus" class="auth-status"></div>
+      </form>
+      
+      <div class="auth-footer">
+        <p>Não tem uma conta? <a href="#" onclick="showRegister()">Cadastre seu escritório</a></p>
+        <p><a href="#" onclick="showLanding()">← Voltar ao início</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tela de Cadastro -->
+  <div id="registerPage" class="auth-page" style="display:none;">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="logo-large">
+          <div class="logo-image">
+            <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.src='/ui/logo.svg'" />
+          </div>
+          <span>JurisFlow</span>
+        </div>
+        <h2>Cadastro de Escritório</h2>
+        <p>Registre seu escritório e comece a usar nossa plataforma</p>
+      </div>
+      
+      <form class="auth-form" onsubmit="return false;">
+        <div class="form-group">
+          <label for="officeName">Nome do Escritório</label>
+          <input id="officeName" type="text" placeholder="Ex: Advocacia Silva & Associados" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="cnpj">CNPJ</label>
+          <input id="cnpj" type="text" placeholder="00.000.000/0000-00" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="responsibleName">Nome do Responsável</label>
+          <input id="responsibleName" type="text" placeholder="Nome completo" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="oabNumber">Número da OAB</label>
+          <input id="oabNumber" type="text" placeholder="Ex: 123456/SP" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="userType">Tipo de Usuário</label>
+          <select id="userType" class="form-input form-select" onchange="toggleOabField()">
+            <option value="">Selecione o tipo</option>
+            <option value="advogado">Advogado</option>
+            <option value="estagiario">Estagiário</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input id="email" type="email" placeholder="contato@escritorio.com" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="phone">Telefone</label>
+          <input id="phone" type="tel" placeholder="(11) 99999-9999" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="newUsername">Usuário</label>
+          <input id="newUsername" type="text" placeholder="Escolha um nome de usuário" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="newPassword">Senha</label>
+          <input id="newPassword" type="password" placeholder="Mínimo 8 caracteres" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar Senha</label>
+          <input id="confirmPassword" type="password" placeholder="Digite a senha novamente" class="form-input" />
+        </div>
+        
+        <div class="form-checkbox">
+          <input id="acceptTerms" type="checkbox" />
+          <label for="acceptTerms">Aceito os <a href="#">termos de uso</a> e <a href="#">política de privacidade</a></label>
+        </div>
+        
+        <button type="button" class="btn-primary-full" onclick="register()">Cadastrar Escritório</button>
+        
+        <div id="registerStatus" class="auth-status"></div>
+      </form>
+      
+      <div class="auth-footer">
+        <p>Já tem uma conta? <a href="#" onclick="showLogin()">Fazer login</a></p>
+        <p><a href="#" onclick="showLanding()">← Voltar ao início</a></p>
+      </div>
+    </div>
   </div>
 
   <!-- Modal para buscar documento -->
@@ -130,71 +324,180 @@
     </div>
   </div>
 
-  <div id="mainUI" style="display:none;" class="container">
-    <div class="header">
-      <h1>🚀 API Gateway - SOA Microserviços</h1>
-      <div class="muted">UI de teste servida pelo próprio gateway em <code>/ui</code></div>
-    </div>
+  <div id="mainUI" style="display:none;" class="main-system">
+    <!-- Header do Sistema -->
+    <header class="system-header-new">
+      <div class="header-top">
+        <div class="office-info">
+          <div class="logo-system-new">
+            <div class="logo-image">
+              <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.src='/ui/logo.svg'" />
+            </div>
+            <span>JurisFlow</span>
+          </div>
+          <div class="office-details">
+            <h2 id="officeName">Carregando...</h2>
+            <p>Plataforma de Orquestração Jurídica</p>
+          </div>
+        </div>
+        
+        <div class="user-actions">
+          <div class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span id="userName">Usuário</span>
+          </div>
+          <button class="btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Sair
+          </button>
+        </div>
+      </div>
+    </header>
 
-    <div class="toolbar">
-      <button class="secondary" data-permission="read" onclick="hit('/health','GET')">💚 Health</button>
-      <button data-permission="write" onclick="hit('/api/seed','POST')">🌱 Popular com dados de exemplo (seed)</button>
-      <button class="secondary" onclick="logout()">🚪 Sair</button>
-    </div>
-    <div id="userInfo" class="muted" style="text-align:center;margin-bottom:18px"></div>
-    <div id="status" class="statusline">Aguardando...</div>
+    <!-- Área Principal -->
+    <main class="main-content">
+      <!-- Cards de Funcionalidades -->
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="card-header">
+            <i class="fas fa-file-alt"></i>
+            <h3>Documentos</h3>
+          </div>
+          <div class="card-actions">
+            <button data-permission="read" onclick="listDocuments()" class="btn-action">
+              <i class="fas fa-list"></i>
+              Listar Documentos
+            </button>
+            <button data-permission="write" onclick="createDocument()" class="btn-action">
+              <i class="fas fa-plus"></i>
+              Criar Documento
+            </button>
+            <button data-permission="read" onclick="searchDocument()" class="btn-action">
+              <i class="fas fa-search"></i>
+              Buscar Documento
+            </button>
+          </div>
+        </div>
 
-    <div class="grid">
-      <div class="card">
-        <h3>📄 Documentos</h3>
-        <div class="btns">
-          <button data-permission="read" onclick="hit('/api/documents','GET')" title="Apenas lista os documentos existentes">📋 Listar Documentos</button>
-          <button data-permission="write" onclick="createDocument()" title="Cria um novo documento">➕ Criar Documento</button>
-          <button data-permission="read" onclick="searchDocument()" title="Busca um documento por ID">🔍 Buscar Documento</button>
-          <button data-permission="delete" onclick="deleteDocument()" title="Exclui um documento por ID">🗑️ Excluir Documento</button>
+        <div class="feature-card">
+          <div class="card-header">
+            <i class="fas fa-clock"></i>
+            <h3>Prazos</h3>
+          </div>
+          <div class="card-actions">
+            <button data-permission="read" onclick="listDeadlines()" class="btn-action">
+              <i class="fas fa-list"></i>
+              Listar Prazos
+            </button>
+            <button data-permission="write" onclick="createDeadlineModal()" class="btn-action">
+              <i class="fas fa-plus"></i>
+              Criar Prazo
+            </button>
+            <button data-permission="read" onclick="listTodayDeadlines()" class="btn-action">
+              <i class="fas fa-calendar-day"></i>
+              Prazos de Hoje
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <h3>⏰ Prazos</h3>
-        <div class="btns">
-          <button data-permission="read" onclick="hit('/api/deadlines','GET')">Listar Prazos</button>
-          <button data-permission="write" onclick="createDeadlineModal()">Criar Prazo</button>
-          <button data-permission="read" onclick="hit('/api/deadlines/today','GET')">Prazos de Hoje</button>
-          <button data-permission="delete" onclick="deleteDeadline()">Excluir Prazo</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>🏛️ Audiências</h3>
-        <div class="btns">
-          <button data-permission="read" onclick="hit('/api/hearings','GET')" title="Apenas lista as audiências existentes">📋 Listar Audiências</button>
-          <button data-permission="write" onclick="createHearingModal()" title="Agenda uma nova audiência">➕ Agendar Audiência</button>
-          <button data-permission="read" onclick="hit('/api/hearings/today','GET')" title="Lista audiências de hoje">📅 Audiências de Hoje</button>
-          <button data-permission="delete" onclick="deleteHearing()" title="Cancela uma audiência por ID">🗑️ Cancelar Audiência</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>⚖️ Processos</h3>
-        <div class="btns">
-          <button data-permission="read" onclick="listProcesses()">Listar Processos</button>
-          <button data-permission="read" onclick="searchProcess()">Buscar Processo</button>
-          <button data-permission="orchestrate" onclick="orchestrateCase()">Orquestrar (Criar tudo)</button>
-        </div>
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="response-header">
-        <h3>📊 Resposta da API</h3>
-        <div>
-          <span id="responseMeta" class="response-meta"></span>
-          <button id="toggleView" class="toggle-view" onclick="toggleResponseView()" style="display:none;">📋 Tabela</button>
+        <div class="feature-card">
+          <div class="card-header">
+            <i class="fas fa-gavel"></i>
+            <h3>Audiências</h3>
+          </div>
+          <div class="card-actions">
+            <button data-permission="read" onclick="listHearings()" class="btn-action">
+              <i class="fas fa-list"></i>
+              Listar Audiências
+            </button>
+            <button data-permission="write" onclick="createHearingModal()" class="btn-action">
+              <i class="fas fa-plus"></i>
+              Agendar Audiência
+            </button>
+            <button data-permission="read" onclick="listTodayHearings()" class="btn-action">
+              <i class="fas fa-calendar-day"></i>
+              Audiências de Hoje
+            </button>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-header">
+            <i class="fas fa-folder-open"></i>
+            <h3>Processos</h3>
+          </div>
+          <div class="card-actions">
+            <button data-permission="read" onclick="listProcessesModal()" class="btn-action">
+              <i class="fas fa-list"></i>
+              Listar Processos
+            </button>
+            <button data-permission="read" onclick="searchProcess()" class="btn-action">
+              <i class="fas fa-search"></i>
+              Buscar Processo
+            </button>
+            <button data-permission="orchestrate" onclick="orchestrateCase()" class="btn-action primary">
+              <i class="fas fa-magic"></i>
+              Orquestrar Caso
+            </button>
+          </div>
         </div>
       </div>
-      <div id="out" class="result">Nenhuma requisição ainda.</div>
-      <div id="tableView" style="display:none;"></div>
+    </main>
+  </div>
+
+  <!-- Modal para DataTable -->
+  <div id="dataModal" class="modal" onclick="closeDataModal()">
+    <div class="modal-content data-modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header data-modal-header">
+        <h3 id="dataModalTitle">Dados</h3>
+        <button class="modal-close" onclick="closeDataModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body data-modal-body">
+        <div id="dataTableContainer"></div>
+        <div id="dataStatus" class="data-status">Carregando...</div>
+      </div>
     </div>
   </div>
 
-  <script src="/ui/script.js"></script>
+  <!-- Modal de Confirmação de Exclusão -->
+  <div id="confirmDeleteModal" class="modal" onclick="closeConfirmDeleteModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+        <h3 style="color: #fca5a5; display: flex; align-items: center; gap: 0.75rem;">
+          <i class="fas fa-exclamation-triangle"></i>
+          Confirmar Exclusão
+        </h3>
+        <button class="modal-close" onclick="closeConfirmDeleteModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 2rem;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <i class="fas fa-trash-alt" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+          <h4 id="confirmDeleteTitle" style="color: #e2e8f0; margin-bottom: 0.5rem; font-size: 1.25rem;">Deseja excluir este item?</h4>
+          <p id="confirmDeleteMessage" style="color: #94a3b8;">Esta ação não pode ser desfeita.</p>
+        </div>
+        <div class="modal-buttons">
+          <button class="modal-btn secondary" onclick="closeConfirmDeleteModal()">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+          <button class="modal-btn danger" onclick="executeConfirmDelete()">
+            <i class="fas fa-trash"></i>
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/ui/js/main.js"></script>
+  <script src="/ui/js/auth.js"></script>
+  <script src="/ui/js/register.js"></script>
+  <script src="/ui/js/system.js"></script>
+  <script src="/ui/js/modals.js"></script>
+  <script src="/ui/js/datatable.js"></script>
 </body>
 </html>
