@@ -52,9 +52,10 @@ class Config:
     CSP_POLICY = {
         'default-src': "'self'",
         'script-src': "'self' 'unsafe-inline'",
-        'style-src': "'self' 'unsafe-inline'",
+        'style-src': "'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
         'img-src': "'self' data:",
-        'connect-src': "'self'"
+        'connect-src': "'self'",
+        'font-src': "'self' https://cdnjs.cloudflare.com"
     }
     
     # Logging

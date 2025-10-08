@@ -14,9 +14,12 @@ function openDataModal(title, data, type = null) {
   titleElement.textContent = title;
   modal.style.display = 'flex';
   
+  // Clear loading status
+  status.textContent = '';
+  status.style.display = 'none';
+  
   if (!data || (Array.isArray(data) && data.length === 0)) {
     container.innerHTML = createEmptyState(title);
-    status.style.display = 'none';
     return;
   }
   
@@ -31,8 +34,6 @@ function openDataModal(title, data, type = null) {
   } else {
     container.innerHTML = createSingleObjectTable(data);
   }
-  
-  status.style.display = 'none';
 }
 
 // Função para fechar o modal

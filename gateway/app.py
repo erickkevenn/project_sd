@@ -88,12 +88,12 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @app.route("/")
     def root():
         """Redireciona para a UI"""
-        return send_from_directory(UI_DIR, "gateway_ui.html")
+        return send_from_directory(UI_DIR, "index.html")
     
     @app.route("/ui")
     def ui():
         """Serve a interface de usuário"""
-        return send_from_directory(UI_DIR, "gateway_ui.html")
+        return send_from_directory(UI_DIR, "index.html")
     
     @app.route("/ui/<path:filename>")
     def ui_static(filename):
