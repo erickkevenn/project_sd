@@ -1,4 +1,7 @@
-// === FUNÇÕES DOS MODAIS E OPERAÇÕES ===
+/**
+ * Modals Module
+ * Handles modal management and form operations
+ */
 
 // === FUNÇÕES DE CRIAÇÃO COM MODAIS ===
 
@@ -180,17 +183,17 @@ function executeCreateHearing() {
   hit('/api/hearings', 'POST', hearingData);
 }
 
-// === FUNÇÕES DE BUSCA ===
+// === FUNÇÕES DE BUSCA DE DOCUMENTOS ===
 
 function searchDocument() {
   const modal = document.getElementById('searchModal');
-  const input = document.getElementById('docIdInput');
+  const searchInput = document.getElementById('searchIdInput');
   
+  searchInput.value = '';
   modal.style.display = 'flex';
-  input.value = '';
-  input.focus();
+  searchInput.focus();
   
-  input.onkeypress = function(e) {
+  searchInput.onkeypress = function(e) {
     if (e.key === 'Enter') {
       executeSearch();
     }
@@ -198,37 +201,33 @@ function searchDocument() {
 }
 
 function closeSearchModal() {
-  const modal = document.getElementById('searchModal');
-  modal.style.display = 'none';
+  document.getElementById('searchModal').style.display = 'none';
 }
 
 function executeSearch() {
-  const input = document.getElementById('docIdInput');
-  const docId = input.value.trim();
-  
-  closeSearchModal();
+  const searchInput = document.getElementById('searchIdInput');
+  const docId = searchInput.value.trim();
   
   if (!docId) {
-    const box = document.getElementById('out');
-    const status = document.getElementById('status');
-    box.className = 'result';
-    box.textContent = '🔍 BUSCA CANCELADA\n\nVocê não informou um ID para buscar.\n💡 Dica: Digite um ID válido de documento para realizar a busca.';
-    status.textContent = 'Busca cancelada';
+    alert('Por favor, digite o ID do documento.');
     return;
   }
   
+  closeSearchModal();
   hit(`/api/documents/${docId}`, 'GET');
 }
 
+// === FUNÇÕES DE BUSCA DE PROCESSOS ===
+
 function searchProcess() {
   const modal = document.getElementById('processModal');
-  const input = document.getElementById('processIdInput');
+  const processInput = document.getElementById('processIdInput');
   
+  processInput.value = '';
   modal.style.display = 'flex';
-  input.value = '';
-  input.focus();
+  processInput.focus();
   
-  input.onkeypress = function(e) {
+  processInput.onkeypress = function(e) {
     if (e.key === 'Enter') {
       executeProcessSearch();
     }
@@ -236,122 +235,142 @@ function searchProcess() {
 }
 
 function closeProcessModal() {
-  const modal = document.getElementById('processModal');
-  modal.style.display = 'none';
+  document.getElementById('processModal').style.display = 'none';
 }
 
 function executeProcessSearch() {
-  const input = document.getElementById('processIdInput');
-  const processId = input.value.trim();
-  
-  closeProcessModal();
+  const processInput = document.getElementById('processIdInput');
+  const processId = processInput.value.trim();
   
   if (!processId) {
-    const box = document.getElementById('out');
-    const status = document.getElementById('status');
-    box.className = 'result';
-    box.textContent = '🔍 BUSCA CANCELADA\n\nVocê não informou um ID de processo para buscar.\n💡 Dica: Digite um ID válido de processo para ver o resumo completo.';
-    status.textContent = 'Busca cancelada';
+    alert('Por favor, digite o ID do processo.');
     return;
   }
   
+  closeProcessModal();
   hit(`/api/process/${processId}/summary`, 'GET');
 }
 
-// === FUNÇÃO PARA LISTAR PROCESSOS ===
+// === FUNÇÕES DE EXCLUSÃO ===
 
-async function listProcesses() {
-  try {
-    const box = document.getElementById('out');
-    const status = document.getElementById('status');
-    
-    box.className = 'result';
-    box.textContent = 'LISTAR PROCESSOS → Buscando...\n\nColetando informações de todos os serviços...';
-    status.textContent = 'Buscando processos...';
-    
-    const init = { 
-      method: 'GET', 
-      headers: jwtToken ? { 'Authorization': 'Bearer ' + jwtToken } : {}
-    };
-    
-    const [docsRes, deadlinesRes, hearingsRes] = await Promise.all([
-      fetch('/api/documents', init),
-      fetch('/api/deadlines', init), 
-      fetch('/api/hearings', init)
-    ]);
-    
-    const processIds = new Set();
-    
-    if (docsRes.ok) {
-      const docs = await docsRes.json();
-      docs.forEach(doc => {
-        if (doc.process_id) processIds.add(doc.process_id);
-      });
-    }
-    
-    if (deadlinesRes.ok) {
-      const deadlines = await deadlinesRes.json();
-      deadlines.forEach(deadline => {
-        if (deadline.process_id) processIds.add(deadline.process_id);
-      });
-    }
-    
-    if (hearingsRes.ok) {
-      const hearings = await hearingsRes.json();
-      if (hearings.items) {
-        hearings.items.forEach(hearing => {
-          if (hearing.process_id) processIds.add(hearing.process_id);
-        });
-      }
-    }
-    
-    const processArray = Array.from(processIds);
-    
-    if (processArray.length === 0) {
-      box.textContent = '📋 NENHUM PROCESSO ENCONTRADO\n\nNão há processos cadastrados no sistema.\n💡 Dica: Use "Orquestrar Caso" para criar um processo completo.';
-      status.textContent = 'Nenhum processo encontrado';
-      return;
-    }
-    
-    box.textContent = `✅ ${processArray.length} PROCESSO(S) ENCONTRADO(S)\n\n` +
-                     `Processos disponíveis:\n${processArray.map(id => `• ${id}`).join('\n')}\n\n` +
-                     `💡 Use "Buscar Processo" para ver detalhes completos.`;
-    status.textContent = `${processArray.length} processo(s) encontrado(s)`;
-    
-  } catch (e) {
-    const box = document.getElementById('out');
-    const status = document.getElementById('status');
-    box.className = 'result err';
-    box.textContent = '⚠️ ERRO AO LISTAR PROCESSOS\n\nNão foi possível acessar os serviços.\n💡 Dica: Verifique se todos os serviços estão funcionando.';
-    status.textContent = 'Erro: ' + e.message;
-  }
-}
-
-// === FUNÇÃO DE ORQUESTRAÇÃO ===
-
-function orchestrateCase() {
-  const today = new Date();
-  const deadlineDate = new Date(today);
-  deadlineDate.setDate(today.getDate() + 30);
-  const hearingDate = new Date(today);
-  hearingDate.setDate(today.getDate() + 15);
+function deleteDocument() {
+  const modal = document.getElementById('deleteModal');
+  const deleteInput = document.getElementById('deleteIdInput');
   
-  hit('/api/orchestrate/file-case','POST',{
-    document:{
-      title:'Petição Inicial via Orquestração',
-      content:'Documento criado através da funcionalidade de orquestração automática.',
-      author:'Sistema'
-    },
-    deadline:{
-      process_id:'ORCH-01',
-      due_date: deadlineDate.toISOString().split('T')[0],
-      description: 'Prazo para resposta - criado via orquestração'
-    },
-    hearing:{
-      process_id:'ORCH-01',
-      date: hearingDate.toISOString().split('T')[0],
-      courtroom:'Sala 3',
-      description: 'Audiência inicial - criada via orquestração'
+  deleteInput.value = '';
+  modal.style.display = 'flex';
+  deleteInput.focus();
+  
+  deleteInput.onkeypress = function(e) {
+    if (e.key === 'Enter') {
+      executeDelete();
     }
-  });
+  };
 }
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+
+function executeDelete() {
+  const deleteInput = document.getElementById('deleteIdInput');
+  const docId = deleteInput.value.trim();
+  
+  if (!docId) {
+    alert('Por favor, digite o ID do documento.');
+    return;
+  }
+  
+  closeDeleteModal();
+  hit(`/api/documents/${docId}`, 'DELETE');
+}
+
+function deleteDeadline() {
+  const modal = document.getElementById('deleteDeadlineModal');
+  const deleteInput = document.getElementById('deleteDeadlineIdInput');
+  
+  deleteInput.value = '';
+  modal.style.display = 'flex';
+  deleteInput.focus();
+  
+  deleteInput.onkeypress = function(e) {
+    if (e.key === 'Enter') {
+      executeDeleteDeadline();
+    }
+  };
+}
+
+function closeDeleteDeadlineModal() {
+  document.getElementById('deleteDeadlineModal').style.display = 'none';
+}
+
+function executeDeleteDeadline() {
+  const deleteInput = document.getElementById('deleteDeadlineIdInput');
+  const deadlineId = deleteInput.value.trim();
+  
+  if (!deadlineId) {
+    alert('Por favor, digite o ID do prazo.');
+    return;
+  }
+  
+  closeDeleteDeadlineModal();
+  hit(`/api/deadlines/${deadlineId}`, 'DELETE');
+}
+
+function deleteHearing() {
+  const modal = document.getElementById('deleteHearingModal');
+  const deleteInput = document.getElementById('deleteHearingIdInput');
+  
+  deleteInput.value = '';
+  modal.style.display = 'flex';
+  deleteInput.focus();
+  
+  deleteInput.onkeypress = function(e) {
+    if (e.key === 'Enter') {
+      executeDeleteHearing();
+    }
+  };
+}
+
+function closeDeleteHearingModal() {
+  document.getElementById('deleteHearingModal').style.display = 'none';
+}
+
+function executeDeleteHearing() {
+  const deleteInput = document.getElementById('deleteHearingIdInput');
+  const hearingId = deleteInput.value.trim();
+  
+  if (!hearingId) {
+    alert('Por favor, digite o ID da audiência.');
+    return;
+  }
+  
+  closeDeleteHearingModal();
+  hit(`/api/hearings/${hearingId}`, 'DELETE');
+}
+
+// Export functions for global access
+window.createDocument = createDocument;
+window.closeCreateDocumentModal = closeCreateDocumentModal;
+window.executeCreateDocument = executeCreateDocument;
+window.createDeadlineModal = createDeadlineModal;
+window.closeCreateDeadlineModal = closeCreateDeadlineModal;
+window.executeCreateDeadline = executeCreateDeadline;
+window.createHearingModal = createHearingModal;
+window.closeCreateHearingModal = closeCreateHearingModal;
+window.executeCreateHearing = executeCreateHearing;
+window.searchDocument = searchDocument;
+window.closeSearchModal = closeSearchModal;
+window.executeSearch = executeSearch;
+window.searchProcess = searchProcess;
+window.closeProcessModal = closeProcessModal;
+window.executeProcessSearch = executeProcessSearch;
+window.deleteDocument = deleteDocument;
+window.closeDeleteModal = closeDeleteModal;
+window.executeDelete = executeDelete;
+window.deleteDeadline = deleteDeadline;
+window.closeDeleteDeadlineModal = closeDeleteDeadlineModal;
+window.executeDeleteDeadline = executeDeleteDeadline;
+window.deleteHearing = deleteHearing;
+window.closeDeleteHearingModal = closeDeleteHearingModal;
+window.executeDeleteHearing = executeDeleteHearing;

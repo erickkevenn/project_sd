@@ -1,0 +1,435 @@
+/* ===== PAGES ===== */
+/* Estilos específicos para cada página */
+
+/* ===== LANDING PAGE ===== */
+.landing-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+}
+
+.landing-nav {
+  padding: 1rem 0;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.logo-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.logo-img {
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.logo i {
+  font-size: 1.75rem;
+  color: #fbbf24;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+/* ===== FEATURE CARDS ===== */
+.feature {
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+  border-radius: 1rem;
+  padding: 2rem;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.feature:hover {
+  transform: translateY(-5px);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+.feature i {
+  font-size: 2.5rem;
+  color: #fbbf24;
+  margin-bottom: 1rem;
+}
+
+.feature h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #e2e8f0;
+}
+
+.feature p {
+  color: #94a3b8;
+}
+
+/* ===== BENEFIT CARDS ===== */
+.benefit {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.benefit i {
+  font-size: 2rem;
+  color: #60a5fa;
+  margin-bottom: 1rem;
+}
+
+.benefit h4 {
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+  color: #e2e8f0;
+}
+
+.benefit p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* ===== MAIN SYSTEM ===== */
+.main-system {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #e2e8f0;
+}
+
+.system-header-new {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+  padding: 1.5rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.office-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.logo-system-new {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.logo-system-new .logo-image {
+  width: 3rem;
+  height: 3rem;
+}
+
+.logo-system-new .logo-img {
+  width: 2rem;
+  height: 2rem;
+}
+
+.office-details h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.office-details p {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.user-info i {
+  font-size: 1.5rem;
+  color: #60a5fa;
+}
+
+.btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* ===== FEATURE CARDS ===== */
+.feature-card {
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.3);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+.card-header i {
+  font-size: 1.5rem;
+  color: #fbbf24;
+}
+
+.card-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-action {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(55, 65, 81, 0.6);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  color: #e2e8f0;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.btn-action:hover {
+  background: rgba(75, 85, 99, 0.8);
+  border-color: rgba(96, 165, 250, 0.5);
+  transform: translateX(4px);
+}
+
+.btn-action.primary {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-color: rgba(79, 70, 229, 0.5);
+}
+
+.btn-action.primary:hover {
+  border-color: rgba(79, 70, 229, 0.8);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-action i {
+  font-size: 1rem;
+  color: #94a3b8;
+  width: 1rem;
+}
+
+.btn-action.primary i {
+  color: #e2e8f0;
+}
+
+/* ===== AUTH PAGES ===== */
+.logo-large {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-bottom: 1rem;
+}
+
+.logo-large .logo-image {
+  width: 3rem;
+  height: 3rem;
+}
+
+.logo-large .logo-img {
+  width: 2rem;
+  height: 2rem;
+}
+
+.logo-large i {
+  font-size: 2rem;
+  color: #fbbf24;
+}
+
+.auth-header h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #e2e8f0;
+}
+
+.auth-header p {
+  color: #94a3b8;
+}
+
+.auth-footer p {
+  margin-bottom: 0.5rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.auth-footer a {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE PAGES ===== */
+@media (max-width: 768px) {
+  .nav-content {
+    padding: 0 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .nav-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .header-top {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .office-info {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  
+  .user-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero__title {
+    font-size: 2rem;
+  }
+  
+  .benefits {
+    padding: 2rem 1rem;
+  }
+  
+  .auth-page {
+    padding: 0.5rem;
+    align-items: center;
+  }
+  
+  .auth-container {
+    padding: 1.5rem 1rem;
+    margin: 0.25rem auto;
+    max-width: 95%;
+  }
+  
+  .logo-large {
+    font-size: 1.5rem;
+  }
+  
+  .logo-large i {
+    font-size: 2rem;
+  }
+}

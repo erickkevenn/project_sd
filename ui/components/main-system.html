@@ -1,0 +1,94 @@
+<!-- Main System Component -->
+<div id="mainUI" style="display:none;" class="main-system">
+  <div id="header-container"></div>
+
+  <!-- Área Principal -->
+  <main class="main-content">
+    <!-- Cards de Funcionalidades -->
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="card-header">
+          <i class="fas fa-file-alt"></i>
+          <h3>Documentos</h3>
+        </div>
+        <div class="card-actions">
+          <button data-permission="read" onclick="DocumentService.list()" class="btn-action">
+            <i class="fas fa-list"></i>
+            Listar Documentos
+          </button>
+          <button data-permission="write" onclick="DocumentService.showCreateModal()" class="btn-action">
+            <i class="fas fa-plus"></i>
+            Criar Documento
+          </button>
+          <button data-permission="read" onclick="DocumentService.showSearchModal()" class="btn-action">
+            <i class="fas fa-search"></i>
+            Buscar Documento
+          </button>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-header">
+          <i class="fas fa-clock"></i>
+          <h3>Prazos</h3>
+        </div>
+        <div class="card-actions">
+          <button data-permission="read" onclick="DeadlineService.list()" class="btn-action">
+            <i class="fas fa-list"></i>
+            Listar Prazos
+          </button>
+          <button data-permission="write" onclick="DeadlineService.showCreateModal()" class="btn-action">
+            <i class="fas fa-plus"></i>
+            Criar Prazo
+          </button>
+          <button data-permission="read" onclick="DeadlineService.listToday()" class="btn-action">
+            <i class="fas fa-calendar-day"></i>
+            Prazos de Hoje
+          </button>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-header">
+          <i class="fas fa-gavel"></i>
+          <h3>Audiências</h3>
+        </div>
+        <div class="card-actions">
+          <button data-permission="read" onclick="HearingService.list()" class="btn-action">
+            <i class="fas fa-list"></i>
+            Listar Audiências
+          </button>
+          <button data-permission="write" onclick="HearingService.showCreateModal()" class="btn-action">
+            <i class="fas fa-plus"></i>
+            Agendar Audiência
+          </button>
+          <button data-permission="read" onclick="HearingService.listToday()" class="btn-action">
+            <i class="fas fa-calendar-day"></i>
+            Audiências de Hoje
+          </button>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-header">
+          <i class="fas fa-folder-open"></i>
+          <h3>Processos</h3>
+        </div>
+        <div class="card-actions">
+          <button data-permission="read" onclick="ProcessService.list()" class="btn-action">
+            <i class="fas fa-list"></i>
+            Listar Processos
+          </button>
+          <button data-permission="read" onclick="ProcessService.showSearchModal()" class="btn-action">
+            <i class="fas fa-search"></i>
+            Buscar Processo
+          </button>
+          <button data-permission="orchestrate" onclick="ProcessService.orchestrate()" class="btn-action primary">
+            <i class="fas fa-magic"></i>
+            Orquestrar Caso
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
