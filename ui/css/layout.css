@@ -1,0 +1,408 @@
+/* ===== LAYOUT ===== */
+/* Estruturas de layout e grid */
+
+/* ===== CONTAINERS ===== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.container--large {
+  max-width: 1400px;
+}
+
+.container--small {
+  max-width: 800px;
+}
+
+/* ===== GRID SYSTEM ===== */
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.grid--auto {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid--auto-small {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* ===== FLEXBOX UTILITIES ===== */
+.flex {
+  display: flex;
+}
+
+.flex--column {
+  flex-direction: column;
+}
+
+.flex--center {
+  align-items: center;
+  justify-content: center;
+}
+
+.flex--between {
+  justify-content: space-between;
+}
+
+.flex--around {
+  justify-content: space-around;
+}
+
+.flex--wrap {
+  flex-wrap: wrap;
+}
+
+.flex--gap {
+  gap: 1rem;
+}
+
+.flex--gap-small {
+  gap: 0.5rem;
+}
+
+.flex--gap-large {
+  gap: 2rem;
+}
+
+/* ===== SPACING ===== */
+.margin--top {
+  margin-top: 1rem;
+}
+
+.margin--top-large {
+  margin-top: 2rem;
+}
+
+.margin--bottom {
+  margin-bottom: 1rem;
+}
+
+.margin--bottom-large {
+  margin-bottom: 2rem;
+}
+
+.padding--top {
+  padding-top: 1rem;
+}
+
+.padding--top-large {
+  padding-top: 2rem;
+}
+
+.padding--bottom {
+  padding-bottom: 1rem;
+}
+
+.padding--bottom-large {
+  padding-bottom: 2rem;
+}
+
+/* ===== HEADER LAYOUT ===== */
+.header {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+  padding: 1.5rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.main--full {
+  max-width: none;
+  padding: 0;
+}
+
+/* ===== SECTIONS ===== */
+.section {
+  padding: 4rem 2rem;
+}
+
+.section--hero {
+  text-align: center;
+}
+
+.section--benefits {
+  background: rgba(17, 24, 39, 0.4);
+}
+
+/* ===== FEATURES GRID ===== */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* ===== HERO LAYOUT ===== */
+.hero {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.hero__content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero__title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #60a5fa, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.hero__subtitle {
+  font-size: 1.25rem;
+  color: #94a3b8;
+  margin-bottom: 3rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero__features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin: 4rem 0;
+}
+
+.hero__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 3rem;
+}
+
+/* ===== BENEFITS LAYOUT ===== */
+.benefits {
+  padding: 4rem 2rem;
+  background: rgba(17, 24, 39, 0.4);
+}
+
+.benefits__content {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.benefits__title {
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #e2e8f0;
+}
+
+.benefits__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+/* ===== AUTH LAYOUT ===== */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  overflow-y: auto;
+}
+
+.auth-page::-webkit-scrollbar {
+  width: 8px;
+}
+
+.auth-page::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.auth-page::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.3);
+  border-radius: 4px;
+}
+
+.auth-page::-webkit-scrollbar-thumb:hover {
+  background: rgba(96, 165, 250, 0.5);
+}
+
+.auth-container {
+  background: rgba(17, 24, 39, 0.95);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 480px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  margin: 1rem auto;
+  position: relative;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+/* ===== RESPONSIVE LAYOUT ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .header {
+    padding: 1rem;
+  }
+  
+  .header__content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .header__brand {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  
+  .header__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .main {
+    padding: 1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero {
+    padding: 2rem 1rem;
+  }
+  
+  .hero__title {
+    font-size: 2.5rem;
+  }
+  
+  .hero__subtitle {
+    font-size: 1.125rem;
+  }
+  
+  .hero__features {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero__actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .benefits {
+    padding: 2rem 1rem;
+  }
+  
+  .benefits__grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .auth-page {
+    padding: 0.75rem;
+    align-items: center;
+  }
+  
+  .auth-container {
+    padding: 2rem 1.5rem;
+    margin: 0.5rem auto;
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 2rem 1rem;
+  }
+  
+  .hero__title {
+    font-size: 2rem;
+  }
+  
+  .benefits {
+    padding: 2rem 1rem;
+  }
+  
+  .auth-page {
+    padding: 0.5rem;
+    align-items: center;
+  }
+  
+  .auth-container {
+    padding: 1.5rem 1rem;
+    margin: 0.25rem auto;
+    max-width: 95%;
+  }
+}

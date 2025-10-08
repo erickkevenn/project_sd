@@ -1,0 +1,28 @@
+<!-- Header Component -->
+<header class="header system-header-new">
+  <div class="header__content header-top">
+    <div class="header__brand office-info">
+      <div class="logo-system-new">
+        <div class="logo-image">
+                  <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.onerror=null; this.src='/ui/logo.svg'" />
+        </div>
+        <span>JurisFlow</span>
+      </div>
+      <div class="office-details">
+        <h2 id="officeName">Escritório</h2>
+        <p>Plataforma de Orquestração Jurídica</p>
+      </div>
+    </div>
+    
+    <div class="header__actions user-actions">
+      <div class="user-info">
+        <i class="fas fa-user-circle"></i>
+        <span id="userName">Usuário</span>
+      </div>
+      <button class="btn btn--danger btn-logout" onclick="AuthService.logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        Sair
+      </button>
+    </div>
+  </div>
+</header>

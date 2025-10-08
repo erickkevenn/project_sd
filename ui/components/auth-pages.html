@@ -1,0 +1,123 @@
+<!-- Auth Pages Component -->
+<!-- Login Page -->
+<div id="loginPage" class="auth-page" style="display:none;">
+  <div class="auth-container">
+    <div class="auth-header">
+      <div class="logo-large">
+        <div class="logo-image">
+          <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.src='/ui/logo.svg'" />
+        </div>
+        <span>JurisFlow</span>
+      </div>
+      <h2>Acesso ao Sistema</h2>
+      <p>Entre com suas credenciais para acessar a plataforma</p>
+    </div>
+    
+      <form class="auth-form" onsubmit="return false;">
+        <div class="form-group">
+          <label for="username" class="form-label">Usuário</label>
+          <input id="username" type="text" placeholder="Digite seu usuário" class="form-input" />
+        </div>
+        
+        <div class="form-group">
+          <label for="password" class="form-label">Senha</label>
+          <input id="password" type="password" placeholder="Digite sua senha" class="form-input" />
+        </div>
+      
+      <button type="button" class="btn btn--primary btn--full" onclick="AuthService.login()">Entrar no Sistema</button>
+      
+      <div id="loginStatus" class="status"></div>
+    </form>
+    
+    <div class="auth-footer">
+      <p>Não tem uma conta? <a href="#" onclick="NavigationService.showRegister()">Cadastre seu escritório</a></p>
+      <p><a href="#" onclick="NavigationService.showLanding()">← Voltar ao início</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- Register Page -->
+<div id="registerPage" class="auth-page" style="display:none;">
+  <div class="auth-container">
+    <div class="auth-header">
+      <div class="logo-large">
+        <div class="logo-image">
+          <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.src='/ui/logo.svg'" />
+        </div>
+        <span>JurisFlow</span>
+      </div>
+      <h2>Cadastro de Escritório</h2>
+      <p>Registre seu escritório e comece a usar nossa plataforma</p>
+    </div>
+    
+    <form class="auth-form" onsubmit="return false;">
+      <div class="form-group">
+        <label for="officeName">Nome do Escritório</label>
+        <input id="officeName" type="text" placeholder="Ex: Advocacia Silva & Associados" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="cnpj">CNPJ</label>
+        <input id="cnpj" type="text" placeholder="00.000.000/0000-00" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="responsibleName">Nome do Responsável</label>
+        <input id="responsibleName" type="text" placeholder="Nome completo" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="oabNumber">Número da OAB</label>
+        <input id="oabNumber" type="text" placeholder="Ex: 123456/SP" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="userType">Tipo de Usuário</label>
+        <select id="userType" class="form-input form-select" onchange="AuthService.toggleOabField()">
+          <option value="">Selecione o tipo</option>
+          <option value="advogado">Advogado</option>
+          <option value="estagiario">Estagiário</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" placeholder="contato@escritorio.com" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="phone">Telefone</label>
+        <input id="phone" type="tel" placeholder="(11) 99999-9999" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="newUsername">Usuário</label>
+        <input id="newUsername" type="text" placeholder="Escolha um nome de usuário" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="newPassword">Senha</label>
+        <input id="newPassword" type="password" placeholder="Mínimo 8 caracteres" class="form-input" />
+      </div>
+      
+      <div class="form-group">
+        <label for="confirmPassword">Confirmar Senha</label>
+        <input id="confirmPassword" type="password" placeholder="Digite a senha novamente" class="form-input" />
+      </div>
+      
+      <div class="form-checkbox">
+        <input id="acceptTerms" type="checkbox" />
+        <label for="acceptTerms">Aceito os <a href="#">termos de uso</a> e <a href="#">política de privacidade</a></label>
+      </div>
+      
+        <button type="button" class="btn btn--primary btn--full" onclick="AuthService.register()">Cadastrar Escritório</button>
+      
+      <div id="registerStatus" class="status"></div>
+    </form>
+    
+    <div class="auth-footer">
+      <p>Já tem uma conta? <a href="#" onclick="NavigationService.showLogin()">Fazer login</a></p>
+      <p><a href="#" onclick="NavigationService.showLanding()">← Voltar ao início</a></p>
+    </div>
+  </div>
+</div>

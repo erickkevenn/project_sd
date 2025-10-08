@@ -1,0 +1,147 @@
+<!-- Modals Component -->
+<!-- Search Document Modal -->
+<div id="searchModal" class="modal" onclick="DocumentService.closeSearchModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">🔍 Buscar Documento</div>
+    <div class="info-text">Digite o ID do documento que deseja encontrar:</div>
+    <input type="text" id="docIdInput" class="modal__input" placeholder="Ex: a1b2c3d4" />
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="DocumentService.closeSearchModal()">Cancelar</button>
+      <button class="modal__button modal__button--primary" onclick="DocumentService.search()">Buscar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Search Process Modal -->
+<div id="processModal" class="modal" onclick="ProcessService.closeSearchModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">🔍 Buscar Processo</div>
+    <div class="info-text">Digite o ID do processo para ver o resumo completo:</div>
+    <input type="text" id="processIdInput" class="modal__input" placeholder="Ex: PROC-001, UI-01" />
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="ProcessService.closeSearchModal()">Cancelar</button>
+      <button class="modal__button modal__button--primary" onclick="ProcessService.search()">Buscar Resumo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Document Modal -->
+<div id="createDocumentModal" class="modal" onclick="DocumentService.closeCreateModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">📄 Criar Documento</div>
+    <div class="info-text">Preencha as informações do documento:</div>
+    <input type="text" id="docTitleInput" class="modal__input" placeholder="Título do documento" />
+    <textarea id="docContentInput" class="modal__input" placeholder="Conteúdo do documento" rows="4"></textarea>
+    <input type="text" id="docAuthorInput" class="modal__input" placeholder="Autor" />
+    <input type="text" id="docProcessIdInput" class="modal__input" placeholder="ID do Processo (opcional)" />
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="DocumentService.closeCreateModal()">Cancelar</button>
+      <button class="modal__button modal__button--primary" onclick="DocumentService.create()">Criar Documento</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Deadline Modal -->
+<div id="createDeadlineModal" class="modal" onclick="DeadlineService.closeCreateModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">⏰ Criar Prazo</div>
+    <div class="info-text">Preencha as informações do prazo:</div>
+    <input type="text" id="deadlineProcessIdInput" class="modal__input" placeholder="ID do Processo" />
+    <input type="date" id="deadlineDateInput" class="modal__input" />
+    <textarea id="deadlineDescInput" class="modal__input" placeholder="Descrição do prazo" rows="3"></textarea>
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="DeadlineService.closeCreateModal()">Cancelar</button>
+      <button class="modal__button modal__button--primary" onclick="DeadlineService.create()">Criar Prazo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Hearing Modal -->
+<div id="createHearingModal" class="modal" onclick="HearingService.closeCreateModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">🏛️ Agendar Audiência</div>
+    <div class="info-text">Preencha as informações da audiência:</div>
+    <input type="text" id="hearingProcessIdInput" class="modal__input" placeholder="ID do Processo" />
+    <input type="date" id="hearingDateInput" class="modal__input" />
+    <input type="text" id="hearingCourtroomInput" class="modal__input" placeholder="Sala da audiência" />
+    <textarea id="hearingDescInput" class="modal__input" placeholder="Descrição da audiência" rows="3"></textarea>
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="HearingService.closeCreateModal()">Cancelar</button>
+      <button class="modal__button modal__button--primary" onclick="HearingService.create()">Agendar Audiência</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Document Modal -->
+<div id="deleteModal" class="modal" onclick="closeDeleteModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">🗑️ Excluir Documento</div>
+    <div class="info-text">Digite o ID do documento que deseja excluir:</div>
+    <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+    <input type="text" id="deleteIdInput" class="modal__input" placeholder="Ex: a1b2c3d4" />
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="closeDeleteModal()">Cancelar</button>
+      <button class="modal__button modal__button--danger" onclick="executeDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Deadline Modal -->
+<div id="deleteDeadlineModal" class="modal" onclick="closeDeleteDeadlineModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">🗑️ Excluir Prazo</div>
+    <div class="info-text">Digite o ID do prazo que deseja excluir:</div>
+    <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+    <input type="text" id="deleteDeadlineIdInput" class="modal__input" placeholder="Ex: a1b2c3d4" />
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="closeDeleteDeadlineModal()">Cancelar</button>
+      <button class="modal__button modal__button--danger" onclick="executeDeleteDeadline()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Hearing Modal -->
+<div id="deleteHearingModal" class="modal" onclick="closeDeleteHearingModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header">🗑️ Cancelar Audiência</div>
+    <div class="info-text">Digite o ID da audiência que deseja cancelar:</div>
+    <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+    <input type="text" id="deleteHearingIdInput" class="modal__input" placeholder="Ex: a1b2c3d4" />
+    <div class="modal__buttons">
+      <button class="modal__button modal__button--secondary" onclick="closeDeleteHearingModal()">Cancelar</button>
+      <button class="modal__button modal__button--danger" onclick="executeDeleteHearing()">Cancelar Audiência</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="confirmDeleteModal" class="modal" onclick="closeConfirmDeleteModal()">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div class="modal__header" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+      <h3 style="color: #fca5a5; display: flex; align-items: center; gap: 0.75rem;">
+        <i class="fas fa-exclamation-triangle"></i>
+        Confirmar Exclusão
+      </h3>
+      <button class="modal__close" onclick="closeConfirmDeleteModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal__body" style="padding: 2rem;">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <i class="fas fa-trash-alt" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+        <h4 id="confirmDeleteTitle" style="color: #e2e8f0; margin-bottom: 0.5rem; font-size: 1.25rem;">Deseja excluir este item?</h4>
+        <p id="confirmDeleteMessage" style="color: #94a3b8;">Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal__buttons">
+        <button class="modal__button modal__button--secondary" onclick="closeConfirmDeleteModal()">
+          <i class="fas fa-times"></i>
+          Cancelar
+        </button>
+        <button class="modal__button modal__button--danger" onclick="executeConfirmDelete()">
+          <i class="fas fa-trash"></i>
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
