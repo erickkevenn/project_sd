@@ -44,11 +44,14 @@ if (Get-Command python -ErrorAction SilentlyContinue) {
     $pythonCmd = "python"
 } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
     $pythonCmd = "python3"
+} elseif (Get-Command py -ErrorAction SilentlyContinue) {
+    $pythonCmd = "py"
 } else {
     Write-ColorLog "Python não encontrado. Instale Python 3.8+ e tente novamente." "Red"
     Write-Host "Download: https://www.python.org/downloads/" -ForegroundColor Yellow
     exit 1
 }
+
 
 $pythonVersion = & $pythonCmd --version 2>&1
 Write-ColorLog "Python detectado: $pythonVersion" "Green"
