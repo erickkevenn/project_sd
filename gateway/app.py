@@ -2,10 +2,11 @@
 API Gateway Principal - Versão Refatorada
 Implementa arquitetura limpa e padrões de código limpo
 """
-
-from flask import Flask, request, jsonify, send_from_directory
 import os
 import logging
+import mimetypes
+
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -98,9 +99,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @app.route("/ui/<path:filename>")
     def ui_static(filename):
         """Serve arquivos estáticos da UI (CSS, JS, etc.)"""
-        from flask import Response
-        import mimetypes
-        
+
         # Determina o tipo MIME baseado na extensão do arquivo
         mimetype = mimetypes.guess_type(filename)[0]
         if filename.endswith('.css'):

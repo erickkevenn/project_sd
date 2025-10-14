@@ -75,17 +75,13 @@
           <h3>Processos</h3>
         </div>
         <div class="card-actions">
-          <button data-permission="read" onclick="ProcessService.list()" class="btn-action">
+          <button data-permission="read" onclick="window.open('/ui/components/process.html', '_blank')" class="btn-action">
             <i class="fas fa-list"></i>
             Listar Processos
           </button>
           <button data-permission="read" onclick="ProcessService.showSearchModal()" class="btn-action">
             <i class="fas fa-search"></i>
             Buscar Processo
-          </button>
-          <button data-permission="orchestrate" onclick="ProcessService.orchestrate()" class="btn-action primary">
-            <i class="fas fa-magic"></i>
-            Orquestrar Caso
           </button>
         </div>
       </div>
