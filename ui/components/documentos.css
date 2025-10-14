@@ -1,6 +1,43 @@
+:root{
+    --cor-1: #0F172A;
+    --cor-2: #1F283C;
+}
+
 .principal{
+    padding: 0.5rem 2rem;
+}
+
+.principal__container{
     display: flex;
     justify-content: center;
-    padding: 0.5rem 2rem;
-    align-items: center;
+    text-align: center;
 }
+
+.principal__container__conteudo{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.principal__container-titulo{
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    width: auto;
+    border-radius: 10px;
+    background-color: var(--cor-1);
+    border: 2px solid var(--cor-2);
+}
+
+.busca-documentos{
+    display: flex;
+    padding: 0.5rem 7.5rem 0.5rem 2rem;
+    width: 140%;
+    background: url(./img/Lupa.svg) no-repeat;
+    background-position: 2% 50%;
+    background-color: var(--cor-1);
+    border: 2px solid var(--cor-2);
+    border-radius: 10px;
+}
+
