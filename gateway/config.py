@@ -19,9 +19,11 @@ class Config:
     # Portas e URLs
     GATEWAY_PORT = int(os.getenv("GATEWAY_PORT", "8000"))
     SERVICES = {
-        "documents": os.getenv("DOCUMENTS_URL", "http://127.0.0.1:5001"),
-        "deadlines": os.getenv("DEADLINES_URL", "http://127.0.0.1:5002"),
-        "hearings": os.getenv("HEARINGS_URL", "http://127.0.0.1:5003"),
+        "auth": os.getenv("AUTH_URL", "http://127.0.0.1:5001"),
+        "processes": os.getenv("PROCESSES_URL", "http://127.0.0.1:5002"),
+        "documents": os.getenv("DOCUMENTS_URL", "http://127.0.0.1:5003"),
+        "deadlines": os.getenv("DEADLINES_URL", "http://127.0.0.1:5004"),
+        "hearings": os.getenv("HEARINGS_URL", "http://127.0.0.1:5005"),
     }
     
     # Configurações gRPC
