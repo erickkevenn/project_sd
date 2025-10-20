@@ -26,7 +26,7 @@
     "nome": "Dr. Advogado Um",
     "email": "adv.um@escritorio.com",
     "login": "adv.um@escritorio.com",
-    "senha": "ac3226b60081e5f9f9f1f784838aca038eb7c2f7411cb90702b6c2bfe07a45a9",
+    "senha": "FFA3494568A41EDC6B470B8C86A07FDA7929EB9ED7703E14F4656539131D4858",
     "role": "Advogado",
     "oab": "AL123456",
     "escritorio_id": "user_admin_01"
@@ -36,7 +36,7 @@
     "nome": "Estagiário Um",
     "email": "est.um@escritorio.com",
     "login": "est.um@escritorio.com",
-    "senha": "534d9b45e4168ad5e7ab39ddde0387982ec6a2a18b992f62738b23fcde72f7e7",
+    "senha": "A15F60EE7803DB126FE474C500B3D47240FE907E2D281CE71CB49B50390F6F99", 
     "role": "Estagiario",
     "escritorio_id": "user_admin_01"
   }

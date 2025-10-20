@@ -40,7 +40,7 @@ class ApiService {
       console.log(`[ApiService] ${method} ${path}`, body ? { body } : '');
       
       const startTime = performance.now();
-      const response = await fetch(path, config);
+      const response = await fetch(this.baseURL + path, config);
       const endTime = performance.now();
       
       const responseTime = Math.round(endTime - startTime);

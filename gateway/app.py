@@ -49,16 +49,7 @@ def create_app():
         format=config.LOG_FORMAT
     )
     
-    # CORS
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": config.ALLOWED_ORIGINS,
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Correlation-ID"]
-        },
-        r"/ui": {"origins": config.ALLOWED_ORIGINS},
-        r"/health": {"origins": config.ALLOWED_ORIGINS}
-    })
+    CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"], "allow_headers": "*"}})
     
     # Rate Limiting
     limiter = Limiter(
@@ -162,6 +153,14 @@ def register_routes(app, health_checker, limiter, service_client):
             }), 500
     
     # === Rotas de Autenticação ===
+    @app.route("/api/<path:path>", methods=['OPTIONS'])
+    def handle_options(path):
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
+        response.headers.add('Access-Control-Allow-Headers', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH')
+        return response
+
     @app.post("/api/auth/login")
     @limiter.limit(config.LOGIN_RATE_LIMIT)
     @validate_json(LoginSchema)

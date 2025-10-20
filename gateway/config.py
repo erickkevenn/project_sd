@@ -39,7 +39,7 @@ class Config:
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "5"))
     
     # CORS
-    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:8000').split(',')
+    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:8000,http://localhost:8080').split(',')
     
     # Rate Limiting
     RATE_LIMIT_STORAGE = os.getenv("RATELIMIT_STORAGE_URL", "memory://")
