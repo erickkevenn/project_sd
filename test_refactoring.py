@@ -115,7 +115,7 @@ def test_validation():
     }
     
     try:
-        response = requests.post(f"{SERVICES['processes']}/processes", json=invalid_process)
+        response = requests.post(f"{SERVICES['processes']}/processes/validate", json=invalid_process)
         if response.status_code == 400:
             print("OK Validacao de processo invalido: OK")
         else:
