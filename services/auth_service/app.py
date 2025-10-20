@@ -130,5 +130,11 @@ def me():
     """Retorna informações do usuário logado"""
     return jsonify(request.current_user)
 
+@app.route("/validate_token", methods=['POST'])
+@token_required
+def validate_token():
+    """Valida um token de autenticação"""
+    return jsonify({"message": "Token válido"}), 200
+
 if __name__ == "__main__":
     app.run(port=5001, debug=True)

@@ -186,6 +186,7 @@ talisman = Talisman(app, force_https=config.FORCE_HTTPS)
 **Endpoints**:
 - `POST /login` - Login de usuário
 - `GET /me` - Informações do usuário atual
+- `POST /validate_token` - Valida um token de autenticação
 - `GET /health` - Health check
 
 **Estrutura de Token JWT**:
@@ -212,6 +213,7 @@ talisman = Talisman(app, force_https=config.FORCE_HTTPS)
 **Endpoints**:
 - `GET /processes` - Listar processos
 - `POST /processes` - Criar processo
+- `POST /processes/validate` - Valida os dados de um processo
 - `GET /processes/{id}` - Obter processo
 - `PUT /processes/{id}` - Atualizar processo
 - `DELETE /processes/{id}` - Deletar processo
@@ -377,10 +379,19 @@ sequenceDiagram
 ```python
 {
     "numero_processo": "string (obrigatório)",
-    "descricao": "string (opcional)",
-    "cliente_nome": "string (obrigatório)",
-    "responsavel_id": "string (opcional)",
-    "data_prazo": "string (opcional)"
+    "classe_processo": "string (obrigatório)",
+    "area_direito": "string (obrigatório)",
+    "data_distribuicao": "string (obrigatório)",
+    "valor_causa": "float (obrigatório)",
+    "status_processo": "string (obrigatório)",
+    "cliente_id": "string (obrigatório)",
+    "advogado_responsavel_id": "string (obrigatório)",
+    "tribunal": "string (obrigatório)",
+    "comarca": "string (obrigatório)",
+    "juiz_responsavel": "string (obrigatório)",
+    "fase_processual": "string (obrigatório)",
+    "descricao_processo": "string (obrigatório)",
+    "prioridade": "string (obrigatório)"
 }
 ```
 
