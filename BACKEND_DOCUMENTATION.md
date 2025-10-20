@@ -170,6 +170,92 @@ CORS(app, resources={
 talisman = Talisman(app, force_https=config.FORCE_HTTPS)
 ```
 
+### Orquestração de Serviços
+
+O gateway implementa rotas de orquestração para simplificar operações complexas que envolvem múltiplos microsserviços.
+
+#### `POST /api/orchestrate/file-case`
+
+Este endpoint orquestra a criação de um caso completo, envolvendo a criação de um documento, um prazo e uma audiência em uma única transação.
+
+**Requisição:**
+```json
+{
+    "document": {"title":"Inicial","content":"...", "author":"Erick"},
+    "deadline": {"process_id":"0001","due_date":"2025-10-12"},
+    "hearing":  {"process_id":"0001","date":"2025-11-01","courtroom":"Sala 2"}
+}
+```
+
+**Resposta (Sucesso):**
+```json
+{
+    "status": "ok",
+    "message": "Case orchestration completed",
+    "results": {
+        "document": {"status": 201, "data": {...}},
+        "deadline": {"status": 201, "data": {...}},
+        "hearing": {"status": 201, "data": {...}}
+    }
+}
+```
+
+#### `GET /api/process/<proc_id>/summary`
+
+Este endpoint agrega informações de um processo a partir de múltiplos serviços, retornando um resumo completo.
+
+**Resposta (Sucesso):**
+```json
+{
+    "process_id": "proc_001",
+    "summary": {
+        "documents": [...],
+        "deadlines": [...],
+        "hearings": [...]
+    }
+}
+```
+
+---
+
+## 🌐 Endpoints da API
+
+O gateway expõe os seguintes endpoints:
+
+| Verbo  | Rota                                      | Descrição                                            |
+|--------|-------------------------------------------|--------------------------------------------------------|
+| **UI** |                                           |                                                        |
+| GET    | `/`                                       | Redireciona para a UI.                                 |
+| GET    | `/ui`                                     | Serve a página principal da UI.                        |
+| GET    | `/ui/<path:filename>`                     | Serve arquivos estáticos da UI (CSS, JS, etc.).        |
+| **Saúde** |                                           |                                                        |
+| GET    | `/health`                                 | Health check do gateway e de todos os microsserviços.  |
+| **Auth** |                                           |                                                        |
+| POST   | `/api/auth/login`                         | Autentica um usuário e retorna um token JWT.           |
+| GET    | `/api/auth/me`                            | Retorna informações do usuário autenticado.            |
+| **Processos** |                                           |                                                        |
+| GET    | `/api/processes`                          | Lista todos os processos.                              |
+| POST   | `/api/processes`                          | Cria um novo processo.                                 |
+| GET    | `/api/processes/<process_id>`             | Obtém um processo específico.                          |
+| PUT    | `/api/processes/<process_id>`             | Atualiza um processo.                                  |
+| DELETE | `/api/processes/<process_id>`             | Remove um processo.                                    |
+| **Documentos** |                                           |                                                        |
+| GET    | `/api/documents`                          | Lista todos os documentos.                             |
+| POST   | `/api/documents`                          | Cria um novo documento.                                |
+| GET    | `/api/documents/<doc_id>`                 | Obtém um documento específico.                         |
+| DELETE | `/api/documents/<doc_id>`                 | Remove um documento.                                   |
+| **Prazos** |                                           |                                                        |
+| GET    | `/api/deadlines`                          | Lista todos os prazos.                                 |
+| GET    | `/api/deadlines/today`                    | Lista os prazos que vencem hoje.                       |
+| **Audiências** |                                           |                                                        |
+| GET    | `/api/hearings`                           | Lista todas as audiências.                             |
+| POST   | `/api/hearings`                           | Cria uma nova audiência.                               |
+| GET    | `/api/hearings/today`                     | Lista as audiências de hoje.                           |
+| DELETE | `/api/hearings/<hearing_id>`              | Remove uma audiência.                                  |
+| **Orquestração** |                                           |                                                        |
+| POST   | `/api/orchestrate/file-case`              | Orquestra a criação de um caso completo.               |
+| GET    | `/api/process/<proc_id>/summary`          | Obtém um resumo de um processo.                        |
+
 ---
 
 ## 🔧 Microserviços
@@ -595,33 +681,39 @@ python test_refactoring.py
 
 ## 🧪 Testes
 
-### Teste Automatizado
+### Testes Automatizados
+
+O projeto contém uma suíte de testes para garantir a qualidade e o comportamento esperado do código.
+
+**Executando todos os testes de integração e segurança:**
 
 ```bash
-python test_refactoring.py
+pytest tests/
+```
+
+**Executando o script de teste de refatoração:**
+
+```bash
+pytest test_refactoring.py
 ```
 
 ### Testes Manuais
 
 #### 1. Health Check
 ```bash
-curl http://127.0.0.1:5001/health
-curl http://127.0.0.1:5002/health
-curl http://127.0.0.1:5003/health
-curl http://127.0.0.1:5004/health
-curl http://127.0.0.1:5005/health
+curl http://127.0.0.1:8000/health
 ```
 
 #### 2. Login
 ```bash
-curl -X POST http://127.0.0.1:5001/login \
+curl -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login": "admin@escritorio.com", "senha": "admin123"}'
 ```
 
 #### 3. Requisição Autenticada
 ```bash
-curl -X GET http://127.0.0.1:5002/processes \
+curl -X GET http://127.0.0.1:8000/api/documents \
   -H "Authorization: Bearer SEU_TOKEN"
 ```
 
@@ -631,29 +723,51 @@ curl -X GET http://127.0.0.1:5002/processes \
 
 ### Problemas Comuns
 
-#### 1. Erro de Import
-```
-ModuleNotFoundError: No module named 'shared'
-```
-**Solução**: Verificar se o diretório `shared/` existe e tem `__init__.py`
+#### 1. Erro de Conexão ou `502 Bad Gateway`
 
-#### 2. Erro de Marshmallow
-```
-TypeError: Field.__init__() got an unexpected keyword argument 'missing'
-```
-**Solução**: Usar `load_default` em vez de `missing`
-
-#### 3. Erro de Conexão
 ```
 ConnectionError: [WinError 10061] Nenhuma conexão pode ser feita
 ```
-**Solução**: Verificar se os serviços estão rodando nas portas corretas
+ou
+```json
+{
+  "error": "Error calling <service_name>"
+}
+// Status Code: 502 Bad Gateway
+```
 
-#### 4. Erro de Autenticação
+**Causa**: Um ou mais microsserviços não estão em execução ou estão inacessíveis pelo gateway.
+
+**Solução**: 
+- Verifique se todos os serviços foram iniciados corretamente em seus respectivos terminais e portas.
+- Utilize o endpoint `/health` do gateway para diagnosticar quais serviços estão offline.
+
+#### 2. Erro de Autenticação (`401 Unauthorized`)
+
+**Causa**: O token JWT não foi fornecido, é inválido ou expirou.
+
+**Solução**: 
+- Certifique-se de que o header `Authorization: Bearer <token>` está sendo enviado.
+- Obtenha um novo token através do endpoint de login.
+
+#### 3. Erro de Permissão (`403 Forbidden`)
+
+**Causa**: O usuário autenticado não tem permissão para acessar o recurso.
+
+**Solução**: Verifique as `roles` e `permissions` associadas ao usuário no token JWT.
+
+#### 4. Erro de Validação (`400 Bad Request`)
+
+**Causa**: Os dados enviados na requisição não seguem o schema esperado.
+
+**Solução**: Consulte a seção de [Validação de Dados](#validação-de-dados) para verificar os campos obrigatórios e seus formatos.
+
+#### 5. Erro de Import (`ModuleNotFoundError`)
+
 ```
-401 Unauthorized
+ModuleNotFoundError: No module named 'shared'
 ```
-**Solução**: Verificar se o token JWT está sendo enviado corretamente
+**Solução**: Certifique-se de que o diretório raiz do projeto está no `PYTHONPATH` e que o diretório `shared/` contém um arquivo `__init__.py`.
 
 ### Logs de Debug
 

@@ -1,12 +1,18 @@
 @echo off
 
-REM Script para executar todos os testes do projeto
+REM Script para executar todos os testes do projeto com pytest
 
-REM Executa os testes de refatoração
-echo Executando testes de refatoração...
-python test_refactoring.py
-
-REM Executa os testes de autenticação
 echo.
-echo Executando testes de autenticação...
-python tests/test_auth.py
+echo =================================================================
+echo                  INICIANDO BATERIA DE TESTES
+echo =================================================================
+echo.
+
+REM Executa todos os testes com pytest, incluindo refatoração, autenticação, integração e segurança
+pytest -v tests/test_auth.py tests/test_integration.py tests/test_security.py test_refactoring.py
+
+echo.
+echo =================================================================
+echo                   TESTES CONCLUÍDOS
+echo =================================================================
+echo.

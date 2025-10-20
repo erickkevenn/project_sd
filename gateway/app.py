@@ -110,7 +110,7 @@ def register_routes(app, health_checker, limiter, service_client):
             return jsonify(response.json()), response.status_code
         except requests.exceptions.RequestException as e:
             log_security_event("SERVICE_ERROR", f"Error calling {service_name}: {str(e)}")
-            return jsonify({"error": f"Error calling {service_name}"}), 503
+            return jsonify({"error": f"Error calling {service_name}"}), 502
     
     # === Rotas de UI ===
     @app.route("/")
@@ -168,7 +168,12 @@ def register_routes(app, health_checker, limiter, service_client):
     def login():
         """Endpoint de login com autenticação"""
         try:
-            response = requests.post(f"{config.SERVICES['auth']}/login", json=request.validated_data)
+            # Transforma os dados para o formato esperado pelo serviço de autenticação
+            auth_data = {
+                "login": request.validated_data["username"],
+                "senha": request.validated_data["password"]
+            }
+            response = requests.post(f"{config.SERVICES['auth']}/login", json=auth_data)
             return jsonify(response.json()), response.status_code
         except requests.exceptions.RequestException as e:
             log_security_event("LOGIN_ERROR", f"Login error: {str(e)}")

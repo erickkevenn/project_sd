@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Testes para o serviço de autenticação
 """
@@ -10,7 +9,7 @@ AUTH_SERVICE_URL = "http://127.0.0.1:5001"
 
 def test_successful_login():
     """Testa um login bem-sucedido"""
-    print("Testando login bem-sucedido...")
+    print("\n---\n[*] Teste: Login de usuário bem-sucedido...")
     
     login_data = {
         "login": "admin@escritorio.com",
@@ -19,16 +18,14 @@ def test_successful_login():
     
     try:
         response = requests.post(f"{AUTH_SERVICE_URL}/login", json=login_data)
-        if response.status_code == 200:
-            print("OK Login bem-sucedido")
-        else:
-            print(f"ERRO Login bem-sucedido: {response.status_code}")
+        assert response.status_code == 200, f"Login bem-sucedido falhou: {response.status_code}"
+        print("  [+] Login bem-sucedido: OK")
     except Exception as e:
-        print(f"ERRO Erro no login bem-sucedido: {e}")
+        assert False, f"Erro no login bem-sucedido: {e}"
 
 def test_failed_login():
     """Testa um login mal-sucedido"""
-    print("\nTestando login mal-sucedido...")
+    print("\n---\n[*] Teste: Login de usuário mal-sucedido...")
     
     login_data = {
         "login": "admin@escritorio.com",
@@ -37,13 +34,7 @@ def test_failed_login():
     
     try:
         response = requests.post(f"{AUTH_SERVICE_URL}/login", json=login_data)
-        if response.status_code == 401:
-            print("OK Login mal-sucedido")
-        else:
-            print(f"ERRO Login mal-sucedido: {response.status_code}")
+        assert response.status_code == 401, f"Login mal-sucedido falhou: {response.status_code}"
+        print("  [+] Login mal-sucedido: OK")
     except Exception as e:
-        print(f"ERRO Erro no login mal-sucedido: {e}")
-
-if __name__ == "__main__":
-    test_successful_login()
-    test_failed_login()
+        assert False, f"Erro no login mal-sucedido: {e}"
