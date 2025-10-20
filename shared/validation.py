@@ -15,10 +15,19 @@ class DocumentSchema(Schema):
 class ProcessSchema(Schema):
     """Schema para validação de processos"""
     numero_processo = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    descricao = fields.Str(load_default="")
-    cliente_nome = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    responsavel_id = fields.Str(load_default=None)
-    data_prazo = fields.Str(load_default=None)
+    classe_processo = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    area_direito = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    data_distribuicao = fields.Str(required=True)
+    valor_causa = fields.Float(required=True)
+    status_processo = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    cliente_id = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    advogado_responsavel_id = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    tribunal = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    comarca = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    juiz_responsavel = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    fase_processual = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    descricao_processo = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    prioridade = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
 
 class DeadlineSchema(Schema):
     """Schema para validação de prazos"""

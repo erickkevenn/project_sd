@@ -55,6 +55,12 @@ def create_process():
 
     return jsonify(new_process), 201
 
+@app.route("/processes/validate", methods=['POST'])
+@validate_json(ProcessSchema)
+def validate_process():
+    """Valida os dados de um processo"""
+    return jsonify({"message": "Validacao bem-sucedida"}), 200
+
 @app.route("/processes/<process_id>", methods=['GET'])
 @token_required
 @require_permission("read")

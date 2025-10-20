@@ -17,7 +17,7 @@ from flask_talisman import Talisman
 # Imports locais
 from config import get_config
 from middleware import setup_middleware, protocol_selector
-from services import ServiceClient, HealthChecker, GrpcClient
+from services import ServiceClient, HealthChecker
 from security import (
     require_auth, require_permission, require_role, validate_json,
     LoginSchema, log_security_event
