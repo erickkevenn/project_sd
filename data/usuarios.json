@@ -1,0 +1,43 @@
+[
+  {
+    "id": "user_admin_01",
+    "nome": "Dr. Admin Master",
+    "email": "admin@escritorio.com",
+    "login": "admin@escritorio.com",
+    "senha": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "role": "Admin",
+    "cnpj": "12.345.678/0001-99",
+    "razao_social": "Escritório de Advocacia Master Ltda.",
+    "nome_fantasia": "Advocacia Master",
+    "endereco_rua": "Avenida Principal",
+    "endereco_numero": "123",
+    "endereco_complemento": "Sala 101",
+    "endereco_bairro": "Centro",
+    "endereco_cidade": "Maceió",
+    "endereco_estado": "AL",
+    "endereco_cep": "01000-000",
+    "funcionarios": [
+      "user_adv_01",
+      "user_est_01"
+    ]
+  },
+  {
+    "id": "user_adv_01",
+    "nome": "Dr. Advogado Um",
+    "email": "adv.um@escritorio.com",
+    "login": "adv.um@escritorio.com",
+    "senha": "ac3226b60081e5f9f9f1f784838aca038eb7c2f7411cb90702b6c2bfe07a45a9",
+    "role": "Advogado",
+    "oab": "AL123456",
+    "escritorio_id": "user_admin_01"
+  },
+  {
+    "id": "user_est_01",
+    "nome": "Estagiário Um",
+    "email": "est.um@escritorio.com",
+    "login": "est.um@escritorio.com",
+    "senha": "534d9b45e4168ad5e7ab39ddde0387982ec6a2a18b992f62738b23fcde72f7e7",
+    "role": "Estagiario",
+    "escritorio_id": "user_admin_01"
+  }
+]

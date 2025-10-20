@@ -1,0 +1,21 @@
+
+[
+  {
+    "id": "proc_001",
+    "numero_processo": "0001234-56.2023.8.26.0001",
+    "descricao": "Ação de Indenização por Danos Morais",
+    "cliente_nome": "Empresa XYZ Ltda",
+    "responsavel_id": "user_adv_01",
+    "data_criacao": "2023-01-15T09:00:00Z",
+    "data_prazo": "2023-08-15T23:59:59Z"
+  },
+  {
+    "id": "proc_002",
+    "numero_processo": "0005678-12.2023.8.26.0002",
+    "descricao": "Ação de Despejo por Falta de Pagamento",
+    "cliente_nome": "Sra. Maria da Silva",
+    "responsavel_id": "user_adv_01",
+    "data_criacao": "2023-03-20T14:30:00Z",
+    "data_prazo": "2023-11-30T23:59:59Z"
+  }
+]
