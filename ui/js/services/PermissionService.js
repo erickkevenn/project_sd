@@ -12,7 +12,7 @@ class PermissionService {
    * @param {Array} userPermissions - User permissions array
    */
   applyControl(userPermissions = []) {
-    console.log('[PermissionService] Applying permissions:', userPermissions);
+    console.log('[PermissionService] Applying permissions. User permissions:', userPermissions);
     
     // Get all elements with data-permission attribute
     const permissionElements = document.querySelectorAll('[data-permission]');
@@ -21,7 +21,10 @@ class PermissionService {
       const requiredPermission = element.getAttribute('data-permission');
       const elementText = element.textContent?.trim() || 'element';
       
-      if (this.hasPermission(userPermissions, requiredPermission)) {
+      const hasPerm = this.hasPermission(userPermissions, requiredPermission);
+      console.log(`[PermissionService] Element: ${elementText}, Required: ${requiredPermission}, Has Perm: ${hasPerm}`);
+
+      if (hasPerm) {
         // User has permission - show element
         element.classList.remove('hidden');
         element.disabled = false;
@@ -29,6 +32,7 @@ class PermissionService {
       } else {
         // User doesn't have permission - hide element
         element.classList.add('hidden');
+        element.disabled = true; // Also disable the element
         console.log(`[PermissionService] Hiding element: ${elementText} (requires: ${requiredPermission})`);
       }
     });
@@ -41,11 +45,15 @@ class PermissionService {
    * @returns {boolean} Has permission
    */
   hasPermission(userPermissions, requiredPermission) {
+    console.log('[PermissionService] Checking permission:', requiredPermission, 'against', userPermissions);
     if (!userPermissions || !Array.isArray(userPermissions)) {
+      console.log('[PermissionService] Invalid userPermissions array.');
       return false;
     }
     
-    return userPermissions.includes(requiredPermission);
+    const result = userPermissions.includes(requiredPermission);
+    console.log('[PermissionService] Result for', requiredPermission, ':', result);
+    return result;
   }
 
   /**

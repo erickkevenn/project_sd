@@ -7,8 +7,13 @@ $cleanup = {
     Write-Host "`nEncerrando todos os processos..." -ForegroundColor Yellow
     $processes | ForEach-Object { 
         Write-Host "Tentando encerrar processo com PID: $($_.Id) (Nome: $($_.ProcessName))" -ForegroundColor DarkYellow
+        Start-Sleep -Milliseconds 100 # Pequeno atraso antes de tentar parar
         if (-not $_.HasExited) {
             Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Milliseconds 50 # Pequeno atraso para o processo encerrar
+            if (-not $_.HasExited) {
+                Write-Warning "Processo $($_.ProcessName) (PID: $($_.Id)) ainda está em execução após tentativa de encerramento forçado."
+            }
         }
     }
     Write-Host "Processos encerrados." -ForegroundColor Green

@@ -116,7 +116,7 @@ class App {
     
     for (const component of components) {
       try {
-        const response = await fetch(`/ui/${component.file}`);
+        const response = await fetch(`/${component.file}`);
         if (response.ok) {
           const html = await response.text();
           const container = document.getElementById(component.id);
@@ -142,7 +142,9 @@ class App {
     try {
       const response = await this.services.api?.get('/api/auth/me');
       if (response && response.ok) {
-        this.state.user = response.data.user;
+        console.log('[App] Raw user data from /api/auth/me:', response.data);
+        this.state.user = response.data;
+        console.log('[App] User state after /me response:', this.state.user);
         this.updateUserInterface();
         this.services.permission?.applyControl(this.state.user.permissions);
       } else {
