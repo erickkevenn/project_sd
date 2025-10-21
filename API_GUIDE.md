@@ -166,3 +166,33 @@ Authorization: Bearer <token_do_admin>
     }
     ```
 -   `409 Conflict`: O `login` do novo funcionário já existe.
+
+### 4. Remoção de Funcionários
+
+Endpoint **protegido** para que um Admin possa remover um funcionário de seu escritório.
+
+-   **Endpoint**: `DELETE /employees/<employee_id>`
+-   **Autenticação**: **Obrigatória** (Token de Admin)
+-   **Descrição**: Remove a conta de um funcionário.
+
+**Parâmetros da URL:**
+
+-   `employee_id`: O ID do funcionário a ser removido (ex: `user_...`).
+
+**Cabeçalho da Requisição (Headers):**
+
+```
+Authorization: Bearer <token_do_admin>
+```
+
+**Respostas:**
+
+-   `200 OK`: Funcionário removido com sucesso.
+    ```json
+    {
+        "message": "Employee deleted successfully"
+    }
+    ```
+-   `401 Unauthorized`: Token ausente, inválido ou expirado.
+-   `403 Forbidden`: O usuário autenticado não é um Admin ou o funcionário não pertence ao seu escritório.
+-   `404 Not Found`: O `employee_id` não foi encontrado.

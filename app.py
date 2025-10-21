@@ -170,5 +170,37 @@ def create_employee(current_user):
 
     return jsonify({'message': f'{role} created successfully'}), 201
 
+@app.route('/employees/<employee_id>', methods=['DELETE'])
+@require_auth
+def delete_employee(current_user, employee_id):
+    """Deletes an employee from the Admin's office."""
+    if current_user['role'] != 'Admin':
+        return jsonify({'error': 'Only Admins can delete employees'}), 403
+
+    users = read_users()
+
+    employee_to_delete = next((u for u in users if u['id'] == employee_id), None)
+
+    if not employee_to_delete:
+        return jsonify({'error': 'Employee not found'}), 404
+
+    # Security check: Ensure the employee belongs to the admin's office
+    if 'escritorio_id' not in employee_to_delete or employee_to_delete['escritorio_id'] != current_user['id']:
+        return jsonify({'error': 'Employee does not belong to your office'}), 403
+
+    # Remove the employee from the main user list
+    users = [u for u in users if u['id'] != employee_id]
+
+    # Remove the employee from the admin's `funcionarios` list
+    for user in users:
+        if user['id'] == current_user['id']:
+            if 'funcionarios' in user and employee_id in user['funcionarios']:
+                user['funcionarios'].remove(employee_id)
+            break
+
+    write_users(users)
+
+    return jsonify({'message': 'Employee deleted successfully'}), 200
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

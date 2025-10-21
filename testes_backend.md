@@ -116,7 +116,7 @@ O Admin deve conseguir criar novos funcionários (Advogado/Estagiario).
 ```powershell
 $body = @{
     nome = "Advogado Teste"; email = "advogado@test.com";
-    login = "advogadouser"; senha = "advogadopass"; role = "Advogado"
+    login = "advogadouser"; senha = "advogadopass"; role = "Advogado"; oab = "AL1234"
 }
 
 Invoke-RestMethod -Uri http://127.0.0.1:5000/employees -Method Post -Headers $AdminHeaders -Body (ConvertTo-Json $body)
@@ -128,7 +128,7 @@ Invoke-RestMethod -Uri http://127.0.0.1:5000/employees -Method Post -Headers $Ad
 ```powershell
 $body = @{
     nome = "Fail User"; email = "fail@test.com";
-    login = "failuser"; senha = "failpass"; role = "Advogado"
+    login = "failuser"; senha = "failpass"; role = "Advogado"; oab = "AL1234"
 }
 # Sem o parâmetro -Headers de autenticação
 Invoke-RestMethod -Uri http://127.0.0.1:5000/employees -Method Post -ContentType 'application/json' -Body (ConvertTo-Json $body)
@@ -173,3 +173,49 @@ $body = @{
 Invoke-RestMethod -Uri http://127.0.0.1:5000/employees -Method Post -Headers $AdvogadoHeaders -Body (ConvertTo-Json $body)
 ```
 **Saída Esperada**: `{ "error": "Only Admins can create employees" }`
+
+### 2.3 Role: Admin - Remoção de Funcionário
+
+O Admin deve conseguir remover funcionários do seu próprio escritório.
+
+**Pré-requisito**: Criar um funcionário para ser removido e obter seu ID.
+
+```powershell
+# Cria um Estagiário para ser deletado
+$bodyToDelete = @{
+    nome = "Usuario A Ser Removido"; email = "delete@test.com";
+    login = "deleteuser"; senha = "deletepass"; role = "Estagiario"
+}
+$userToDeleteResponse = Invoke-RestMethod -Uri http://127.0.0.1:5000/employees -Method Post -Headers $AdminHeaders -Body (ConvertTo-Json $bodyToDelete)
+
+# Assume que a API retorna o ID do usuário criado ou que podemos buscá-lo
+# Para este teste, vamos assumir que o ID é conhecido ou pode ser lido do arquivo data/usuarios.json
+# (Em um cenário real, a API de criação poderia retornar o ID)
+
+# Vamos simular a busca do ID (leitura manual para o teste)
+$allUsers = Get-Content -Path .\data\usuarios.json | ConvertFrom-Json
+$EmployeeIdToDelete = ($allUsers | Where-Object { $_.login -eq 'deleteuser' } | Select-Object -ExpandProperty id)
+
+Write-Host "ID do funcionário a ser removido: $EmployeeIdToDelete"
+```
+
+| Teste   | Cenário                               | Endpoint                      | Método | Token | Status Esperado    |
+|---------|---------------------------------------|-------------------------------|--------|-------|--------------------|
+| 2.3.1   | Remover Funcionário (Sucesso)         | `/employees/{employee_id}`    | DELETE | Admin | 200 (OK)           |
+| 2.3.2   | Remover Funcionário Inexistente       | `/employees/user_invalid_id`  | DELETE | Admin | 404 (Not Found)    |
+
+#### Teste 2.3.1: Remover Funcionário (Sucesso)
+
+*Depende das variáveis `$AdminHeaders` e `$EmployeeIdToDelete`.*
+
+```powershell
+Invoke-RestMethod -Uri http://127.0.0.1:5000/employees/$EmployeeIdToDelete -Method Delete -Headers $AdminHeaders
+```
+**Saída Esperada**: `{ "message": "Employee deleted successfully" }`
+
+#### Teste 2.3.2: Remover Funcionário Inexistente (Falha)
+
+```powershell
+Invoke-RestMethod -Uri http://127.0.0.1:5000/employees/user_invalid_id -Method Delete -Headers $AdminHeaders
+```
+**Saída Esperada**: `{ "error": "Employee not found" }`

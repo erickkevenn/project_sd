@@ -41,7 +41,7 @@
         "escritorio_id": "user_admin_01"
     },
     {
-        "id": "user_bc2174e4-b18a-49c5-9494-c90224ff6879",
+        "id": "user_3033ebcb-97a5-42cf-a91c-4c765b53ea81",
         "nome": "Test User",
         "email": "test@example.com",
         "login": "testuser",
@@ -58,16 +58,17 @@
         "endereco_estado": "TS",
         "endereco_cep": "12345-678",
         "funcionarios": [
-            "user_42636c72-306a-4dd8-8463-caf63c494ced"
+            "user_9593fc3e-bd83-4c50-8f44-dfee17a00288"
         ]
     },
     {
-        "id": "user_42636c72-306a-4dd8-8463-caf63c494ced",
+        "id": "user_9593fc3e-bd83-4c50-8f44-dfee17a00288",
         "nome": "Advogado Teste",
         "email": "advogado@test.com",
         "login": "advogadouser",
         "senha": "advogadopass",
         "role": "Advogado",
-        "escritorio_id": "user_bc2174e4-b18a-49c5-9494-c90224ff6879"
+        "escritorio_id": "user_3033ebcb-97a5-42cf-a91c-4c765b53ea81",
+        "oab": "aaa"
     }
 ]
