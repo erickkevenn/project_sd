@@ -9,282 +9,8 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/layout.css">
     <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/process.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
-
-        .process-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .process-header {
-            background: rgba(17, 24, 39, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.3);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .process-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #e2e8f0;
-            margin: 0 0 1rem 0;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .process-title i {
-            color: #fbbf24;
-        }
-
-        .process-actions {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .process-content {
-            background: rgba(17, 24, 39, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.3);
-            border-radius: 1rem;
-            padding: 2rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .process-list {
-            margin-top: 2rem;
-        }
-
-        .data-table-container {
-            overflow-x: auto;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(51, 65, 85, 0.3);
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-        }
-
-        .data-table thead {
-            background: rgba(30, 41, 59, 0.8);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .data-table th {
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: #e2e8f0;
-            border-bottom: 2px solid rgba(51, 65, 85, 0.5);
-        }
-
-        .data-table td {
-            padding: 1rem;
-            color: #cbd5e1;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.2);
-        }
-
-        .data-table tbody tr {
-            transition: background 0.2s ease;
-        }
-
-        .data-table tbody tr:hover {
-            background: rgba(51, 65, 85, 0.2);
-        }
-
-        .status-loading {
-            text-align: center;
-            padding: 3rem;
-            color: #94a3b8;
-            font-size: 1.1rem;
-        }
-
-        .status-loading i {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            color: #60a5fa;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .search-container {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            align-items: center;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 0.875rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(51, 65, 85, 0.5);
-            background: rgba(15, 23, 42, 0.8);
-            color: #e2e8f0;
-            font-size: 0.95rem;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-        }
-
-        .col-date {
-            color: #fbbf24;
-        }
-
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-
-        .status-success {
-            background: rgba(34, 197, 94, 0.2);
-            color: #86efac;
-        }
-
-        .status-error {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-        }
-
-        /* Details Modal Styles */
-        .details-section {
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #e2e8f0;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid rgba(96, 165, 250, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .section-title i {
-            color: #fbbf24;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .detail-card {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.5);
-            border-radius: 0.75rem;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .detail-card:hover {
-            border-color: rgba(96, 165, 250, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .detail-card-header {
-            background: rgba(51, 65, 85, 0.4);
-            padding: 0.75rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.3);
-        }
-
-        .detail-card-number {
-            font-weight: 700;
-            color: #60a5fa;
-            font-size: 0.875rem;
-        }
-
-        .detail-card-id {
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: #94a3b8;
-            background: rgba(15, 23, 42, 0.8);
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-        }
-
-        .detail-card-body {
-            padding: 1.25rem;
-        }
-
-        .detail-row {
-            display: grid;
-            grid-template-columns: 140px 1fr;
-            gap: 1rem;
-            margin-bottom: 0.875rem;
-            align-items: start;
-        }
-
-        .detail-row-full {
-            grid-template-columns: 1fr;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: #94a3b8;
-            font-size: 0.875rem;
-        }
-
-        .detail-value {
-            color: #e2e8f0;
-            font-size: 0.95rem;
-            word-break: break-word;
-        }
-
-        .detail-content {
-            background: rgba(15, 23, 42, 0.8);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid rgba(51, 65, 85, 0.3);
-            font-size: 0.9rem;
-            line-height: 1.6;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        @media (max-width: 768px) {
-            .details-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .detail-row {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
-            }
-        }
-    </style>
-
     <!-- Header Placeholder -->
     <div id="header-placeholder"></div>
 
@@ -317,9 +43,8 @@
 
         <!-- Search Bar -->
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" 
-                   placeholder="Digite o ID ou nome do processo para filtrar..." 
-                   onkeyup="filterProcesses()">
+            <input type="text" id="searchInput" class="search-input"
+                placeholder="Digite o ID ou nome do processo para filtrar..." onkeyup="filterProcesses()">
         </div>
 
         <!-- Content Area -->
@@ -338,9 +63,8 @@
         <div class="modal__content" onclick="event.stopPropagation()">
             <div class="modal__header">🔍 Buscar Processo</div>
             <div class="info-text">Digite o ID do processo para ver o resumo completo:</div>
-            <input type="text" id="processIdInput" class="modal__input" 
-                   placeholder="Ex: PROC-001, UI-01" 
-                   onkeypress="if(event.key==='Enter') searchProcess()">
+            <input type="text" id="processIdInput" class="modal__input" placeholder="Ex: PROC-001, UI-01"
+                onkeypress="if(event.key==='Enter') searchProcess()">
             <div class="modal__buttons">
                 <button class="modal__button modal__button--secondary" onclick="closeSearchModal()">Cancelar</button>
                 <button class="modal__button modal__button--primary" onclick="searchProcess()">Buscar Resumo</button>
@@ -369,7 +93,7 @@
         let allProcesses = [];
 
         // Check authentication on load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const token = localStorage.getItem('jwtToken');
             if (!token) {
                 alert('Você precisa estar autenticado para acessar esta página.');
@@ -495,7 +219,7 @@
         // Render process table
         function renderProcessTable(processes) {
             const container = document.getElementById('processListContainer');
-            
+
             if (!processes || processes.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state__icon"><i class="fas fa-folder-open"></i></div><div class="empty-state__title">Nenhum processo encontrado</div><div class="empty-state__text">Comece criando documentos, prazos ou audiências vinculados a processos.</div></div>';
                 return;
@@ -526,8 +250,8 @@
         // Filter processes
         function filterProcesses() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allProcesses.filter(p => 
-                p.id.toLowerCase().includes(searchTerm) || 
+            const filtered = allProcesses.filter(p =>
+                p.id.toLowerCase().includes(searchTerm) ||
                 p.name.toLowerCase().includes(searchTerm)
             );
             renderProcessTable(filtered);
@@ -537,7 +261,7 @@
         async function viewProcessDetails(processId) {
             try {
                 const response = await apiRequest(`/api/process/${processId}/summary`);
-                
+
                 if (response.ok) {
                     showProcessDetailsModal(processId, response.data);
                 } else {
@@ -658,8 +382,8 @@
             }
 
             // Empty state
-            if ((!data.documents || data.documents.length === 0) && 
-                (!data.deadlines || data.deadlines.length === 0) && 
+            if ((!data.documents || data.documents.length === 0) &&
+                (!data.deadlines || data.deadlines.length === 0) &&
                 (!data.hearings || data.hearings.length === 0)) {
                 html += '<div class="empty-state">';
                 html += '<div class="empty-state__icon"><i class="fas fa-inbox"></i></div>';
@@ -697,7 +421,7 @@
         async function searchProcess() {
             const processId = document.getElementById('processIdInput').value.trim();
             closeSearchModal();
-            
+
             if (!processId) {
                 alert('Por favor, informe o ID do processo.');
                 return;
@@ -779,14 +503,14 @@
         }
 
         // Close modal when clicking outside
-        document.getElementById('processSearchModal').addEventListener('click', function(e) {
+        document.getElementById('processSearchModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeSearchModal();
             }
         });
 
         // Close details modal when clicking outside
-        document.getElementById('processDetailsModal').addEventListener('click', function(e) {
+        document.getElementById('processDetailsModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeDetailsModal();
             }
@@ -796,24 +520,24 @@
 
 </html>
 <script>
-        async function loadHeader() {
-            try {
-                const response = await fetch('header.html');
-                const html = await response.text();
-                document.getElementById('header-placeholder').innerHTML = html;
-            } catch (error) {
-                console.error('Error loading header:', error);
-            }
+    async function loadHeader() {
+        try {
+            const response = await fetch('header.html');
+            const html = await response.text();
+            document.getElementById('header-placeholder').innerHTML = html;
+        } catch (error) {
+            console.error('Error loading header:', error);
         }
-        document.addEventListener('DOMContentLoaded', async function() {
-            await loadHeader();
-            
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                alert('Você precisa estar autenticado para acessar esta página.');
-                window.close();
-                return;
-            }
-            loadAllProcesses();
-        });
-    </script>
+    }
+    document.addEventListener('DOMContentLoaded', async function () {
+        await loadHeader();
+
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert('Você precisa estar autenticado para acessar esta página.');
+            window.close();
+            return;
+        }
+        loadAllProcesses();
+    });
+</script>

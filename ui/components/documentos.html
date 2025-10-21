@@ -47,21 +47,33 @@
         <section class="principal__container">
             <div class="principal__container__conteudo">
                 <h2 class="principal__container-titulo">Documentos</h2>
-                <input type="text" class="busca-documentos" placeholder="Pesquise o documento pelo id ou pelo nome do autor">
+                <input type="text" class="busca-documentos"
+                    placeholder="Pesquise o documento pelo id ou pelo nome do autor">
 
                 <div class="principal__container__lista-de-documentos">
-                    <div class="checkbox__container">
-                        <input type="checkbox" class="" id="check" style="display: none;">
-                        <label for="check">
-                            <img src="./img/btn-add.svg" alt="botão de adicionar" class="add-doc"
-                                style="cursor: pointer;">
-                        </label>
-                    </div>
+                    <section class="lista-de-documentos__conteudo">
+                        <div class="checkbox__container">
+                            <input type="checkbox" class="checkbox-add" id="check" style="display: none;">
+                            <label for="check">
+                                <img src="./img/btn-add.svg" alt="botão de adicionar" class="add-doc"
+                                    style="cursor: pointer;">
+                            </label>
 
-                    <h2 class="titulo__lista-de-documentos">Lista de documentos</h2>
+                            <section class="add-doc__form">
+                                <div class="add-doc__form-container">
+                                    <h2 class="add-doc__form-titulo">Adicionar Novo Documento</h2>
+                                    <input type="text" class="form-input titulo-documento"
+                                        placeholder="Título do Documento">
+                                    <input type="text" class="form-input conteudo-documento"
+                                        placeholder="Conteúdo do Documento">
+                                    <button class="salvar-doc">Salvar</button>
+                                </div>
+                            </section>
+                        </div>
+                        <h2 class="titulo__lista-de-documentos">Lista de documentos</h2>
+                    </section>
                 </div>
             </div>
-
         </section>
     </main>
 

@@ -1,10 +1,12 @@
 :root{
     --cor-1: #0F172A;
     --cor-2: #1F283C;
+    --cor-3: #fff;
 }
 
 .principal{
     padding: 0.5rem 2rem;
+    width: 100vw;
 }
 
 .principal__container{
@@ -33,7 +35,7 @@
 .busca-documentos{
     display: flex;
     padding: 0.5rem 7.5rem 0.5rem 2rem;
-    width: 140%;
+    width: 50%;
     background: url(./img/Lupa.svg) no-repeat;
     background-position: 2% 50%;
     background-color: var(--cor-1);
@@ -41,3 +43,45 @@
     border-radius: 10px;
 }
 
+.principal__container__lista-de-documentos{
+    background-color: var(--cor-1);
+    border: 5px solid var(--cor-2);
+    padding: 1rem;
+    width: 95vw;
+}
+
+.lista-de-documentos__conteudo{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5rem;
+}
+
+.checkbox__container{
+    position: relative;
+    right: 7rem;
+}
+
+.add-doc__form{ display: none; }
+
+.checkbox-add:checked ~ .add-doc__form{
+    display: block;
+    padding: 1rem;
+    background-color: var(--cor-2);
+    border: 2px solid var(--cor-3 );
+    border-radius: 10px;
+    position: relative;
+    top: -1.5rem;
+    left: 8rem;
+    z-index: 9999;
+}
+
+.add-doc__form-titulo{
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.titulo__lista-de-documentos{
+    position: relative;
+    right: 4rem;
+}
