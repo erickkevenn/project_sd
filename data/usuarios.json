@@ -41,7 +41,7 @@
         "escritorio_id": "user_admin_01"
     },
     {
-        "id": "user_4fec51eb-7192-41d7-9cef-09a4d05c6e86",
+        "id": "user_bc2174e4-b18a-49c5-9494-c90224ff6879",
         "nome": "Test User",
         "email": "test@example.com",
         "login": "testuser",
@@ -52,11 +52,22 @@
         "nome_fantasia": "Test Company",
         "endereco_rua": "Test Street",
         "endereco_numero": "123",
-        "endereco_complemento": null,
+        "endereco_complemento": "",
         "endereco_bairro": "Test Neighborhood",
         "endereco_cidade": "Test City",
-        "endereco_estado": "Test State",
+        "endereco_estado": "TS",
         "endereco_cep": "12345-678",
-        "funcionarios": []
+        "funcionarios": [
+            "user_42636c72-306a-4dd8-8463-caf63c494ced"
+        ]
+    },
+    {
+        "id": "user_42636c72-306a-4dd8-8463-caf63c494ced",
+        "nome": "Advogado Teste",
+        "email": "advogado@test.com",
+        "login": "advogadouser",
+        "senha": "advogadopass",
+        "role": "Advogado",
+        "escritorio_id": "user_bc2174e4-b18a-49c5-9494-c90224ff6879"
     }
 ]
