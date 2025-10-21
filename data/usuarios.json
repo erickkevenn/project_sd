@@ -1,0 +1,62 @@
+[
+    {
+        "id": "user_admin_01",
+        "nome": "Dr. Admin Master",
+        "email": "admin@escritorio.com",
+        "login": "admin@escritorio.com",
+        "senha": "admin123",
+        "role": "Admin",
+        "cnpj": "12.345.678/0001-99",
+        "razao_social": "Escrit\u00c3\u00b3rio de Advocacia Master Ltda.",
+        "nome_fantasia": "Advocacia Master",
+        "endereco_rua": "Avenida Principal",
+        "endereco_numero": "123",
+        "endereco_complemento": "Sala 101",
+        "endereco_bairro": "Centro",
+        "endereco_cidade": "Macei\u00c3\u00b3",
+        "endereco_estado": "AL",
+        "endereco_cep": "01000-000",
+        "funcionarios": [
+            "user_adv_01",
+            "user_est_01"
+        ]
+    },
+    {
+        "id": "user_adv_01",
+        "nome": "Dr. Advogado Um",
+        "email": "adv.um@escritorio.com",
+        "login": "adv.um@escritorio.com",
+        "senha": "adv123",
+        "role": "Advogado",
+        "oab": "AL123456",
+        "escritorio_id": "user_admin_01"
+    },
+    {
+        "id": "user_est_01",
+        "nome": "Estagi\u00c3\u00a1rio Um",
+        "email": "est.um@escritorio.com",
+        "login": "est.um@escritorio.com",
+        "senha": "est123",
+        "role": "Estagiario",
+        "escritorio_id": "user_admin_01"
+    },
+    {
+        "id": "user_4fec51eb-7192-41d7-9cef-09a4d05c6e86",
+        "nome": "Test User",
+        "email": "test@example.com",
+        "login": "testuser",
+        "senha": "testpassword",
+        "role": "Admin",
+        "cnpj": "12345678901234",
+        "razao_social": "Test Company",
+        "nome_fantasia": "Test Company",
+        "endereco_rua": "Test Street",
+        "endereco_numero": "123",
+        "endereco_complemento": null,
+        "endereco_bairro": "Test Neighborhood",
+        "endereco_cidade": "Test City",
+        "endereco_estado": "Test State",
+        "endereco_cep": "12345-678",
+        "funcionarios": []
+    }
+]
