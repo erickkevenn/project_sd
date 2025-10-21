@@ -276,7 +276,14 @@ def register_routes(app, health_checker, limiter, service_client):
         """Lista todos os prazos"""
         return forward_request("deadlines", "/deadlines")
     
-
+    @app.post("/api/deadlines")
+    @require_auth
+    @require_permission("write")
+    @validate_json(DeadlineSchema)
+    @limiter.limit("10 per minute")
+    def create_deadline():
+        """Cria um novo prazo"""
+        return forward_request("deadlines", "/deadlines", method="POST", json_data=request.validated_data)
     
     @app.get("/api/deadlines/today")
     @require_auth
