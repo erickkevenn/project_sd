@@ -69,14 +69,82 @@
                                     <h2 class="add-doc__form-titulo">Adicionar Novo Documento</h2>
                                     <input type="text" class="form-input titulo-documento"
                                         placeholder="Título do Documento">
-                                    <input type="text" class="form-input conteudo-documento"
-                                        placeholder="Conteúdo do Documento">
+                                    <textarea type="text" class="form-input conteudo-documento"
+                                        placeholder="Conteúdo do Documento"></textarea>
                                     <button class="salvar-doc">Salvar Documento</button>
                                 </div>
                             </section>
                         </div>
                         <h2 class="titulo__lista-de-documentos">Lista de documentos</h2>
                     </section>
+
+                    <div class="lista-de-documetos__container">
+                        <input type="checkbox" id="edit-toggle" class="edit-checkbox" style="display: none;">
+
+                        <ul class="lista-conteudo">
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 1 - ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 2 - ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 3- ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 4 - ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+                        </ul>
+
+                        <!-- Tela de edição -->
+
+                        <label class="edit-overlay" for="edit-toggle">
+                            <div class="edit-form">
+                                <label for="edit-toggle" class="btn-fechar-edit">
+                                        <span class="fechar-form" style="cursor: pointer;">X</span>
+                                    </label>
+                                <h2 class="edit-titulo">Editar Documento</h2>
+
+                                <input type="text" placeholder="Digite o novo título" class="form-input">
+
+                                <textarea placeholder="Digite o novo conteúdo" class="form-input"></textarea>
+
+                                <!-- Botão para fechar -->
+                                <label for="edit-toggle" class="salvar-doc">Salvar</label>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
         </section>

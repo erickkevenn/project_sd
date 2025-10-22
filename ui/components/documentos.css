@@ -1,4 +1,4 @@
-:root{
+:root {
     --cor-1: #0F172A;
     --cor-2: #1F283C;
     --cor-3: #fff;
@@ -9,31 +9,32 @@
         opacity: 0;
         transform: translateY(-15px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-.principal{
+.principal {
     padding: 0.5rem 2rem;
     width: 100vw;
 }
 
-.principal__container{
+.principal__container {
     display: flex;
     justify-content: center;
     text-align: center;
 }
 
-.principal__container__conteudo{
+.principal__container__conteudo {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
 }
 
-.principal__container-titulo{
+.principal__container-titulo {
     display: flex;
     justify-content: center;
     padding: 0.5rem 0.75rem;
@@ -43,7 +44,7 @@
     border: 2px solid var(--cor-2);
 }
 
-.busca-documentos{
+.busca-documentos {
     display: flex;
     padding: 0.5rem 7.5rem 0.5rem 2rem;
     width: 50%;
@@ -54,22 +55,23 @@
     border-radius: 10px;
 }
 
-.principal__container__lista-de-documentos{
+.principal__container__lista-de-documentos {
     background-color: var(--cor-1);
     border: 2px solid var(--cor-2);
     border-radius: 10px;
     padding: 1rem;
     width: 95vw;
+    overflow: hidden;
 }
 
-.lista-de-documentos__conteudo{
+.lista-de-documentos__conteudo {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 5rem;
 }
 
-.checkbox__container{
+.checkbox__container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -78,33 +80,36 @@
     left: -5rem;
 }
 
-.add-doc__form{ display: none; }
+.add-doc__form {
+    display: none;
+}
 
-.checkbox-add:checked ~ .add-doc__form{
+.checkbox-add:checked~.add-doc__form {
     display: block;
-    background-color: var(--cor-2);
-    border: 2px solid var(--cor-3 );
+    background-color: var(--cor-1);
+    border: 2px solid var(--cor-3);
     border-radius: 10px;
     position: absolute;
     top: 1rem;
     left: 0.5rem;
     z-index: 9999;
     animation: fadeSlideIn 0.3s ease forwards;
+    overflow: hidden;
 }
 
-.overlay {
+.overlay{
     display: none;
     position: fixed;
     inset: 0;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.322);
     z-index: 9999;
 }
 
-.checkbox-add:checked ~ .overlay {
+.checkbox-add:checked~.overlay {
     display: block;
 }
 
-.add-doc__form-container{
+.add-doc__form-container {
     display: flex;
     padding: 0.5rem 1rem;
     flex-direction: column;
@@ -114,53 +119,184 @@
     width: 50vw;
 }
 
-.btn-fechar-form{
+.btn-fechar-form, .btn-fechar-edit {
     position: relative;
     left: 17rem;
     background-color: var(--cor-1);
     padding: 0 0.5rem;
-    border: 2px solid var(--cor-3);
-    border-radius: 50px;
+    border: 2px solid var(--cor-2);
+    border-radius: 60px;
     font-weight: 700;
 }
 
-.btn-fechar-form:hover{
+.btn-fechar-form:hover {
     background-color: var(--cor-2);
 }
 
-.add-doc__form-titulo{
+.add-doc__form-titulo {
     background-color: var(--cor-1);
     font-size: 1.5rem;
     font-weight: bold;
     padding: 0.5rem;
-    border: 2px solid var(--cor-3);
+    border: 2px solid var(--cor-2);
     border-radius: 10px;
     position: relative;
     top: -1.5rem;
 }
 
-.titulo__lista-de-documentos{
+.titulo__lista-de-documentos {
     position: relative;
     right: 4rem;
 }
 
-.form-input{
+.form-input {
     width: 80%;
-    border: 2px solid var(--cor-3);
+    border: 2px solid var(--cor-2);
+    word-break: keep-all;
 }
 
-.salvar-doc{
+.salvar-doc {
     padding: 1rem 2rem;
     font-weight: 700;
     background-color: var(--cor-1);
     color: var(--cor-3);
-    border: 2px solid var(--cor-3);
+    border: 2px solid var(--cor-2);
     border-radius: 10px;
 }
 
-.salvar-doc:hover{
+.salvar-doc:hover {
     background-color: var(--cor-2);
     cursor: pointer;
     transform: scale(1.02);
     transition: 25ms;
+}
+
+.titulo__lista-de-documentos {
+    padding: 1rem;
+    background-color: var(--cor-1);
+    border: 3px solid var(--cor-2);
+    border-radius: 10px;
+    font-size: 2rem;
+}
+
+.lista-conteudo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 0;
+    gap: 3rem;
+}
+
+.item-lista {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    text-align: center;
+    width: 60%;
+}
+
+.info-documento {
+    position: relative;
+    top: 0.5rem;
+}
+
+.icon {
+    cursor: pointer;
+}
+
+/* Oculta o checkbox */
+.edit-checkbox {
+    display: none;
+}
+
+/* Overlay da edição (invisível inicialmente) */
+.edit-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.162);
+}
+
+/* Mostra o overlay quando o checkbox está marcado */
+.edit-checkbox:checked~.edit-overlay {
+    display: flex;
+}
+
+/* Caixa do formulário */
+.edit-form {
+    background: var(--cor-1);
+    padding: 2rem;
+    border: 2px solid var(--cor-2);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    animation: aparecer 0.3s ease;
+}
+
+.btn-fechar-edit{
+    left: 13rem;
+}
+
+.btn-fechar-edit:hover {
+    background-color: var(--cor-2);
+}
+
+.edit-titulo{
+    padding: 0.5rem 1rem;
+    background-color: var(--cor-1);
+    border: 2px solid var(--cor-2);
+    border-radius: 10px;
+    font-size: 2rem;
+    position: relative;
+    top: -2rem;
+}
+
+/* Botão de fechar */
+.close-btn {
+    align-self: flex-end;
+    background-color: #320a66;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.close-btn:hover {
+    background-color: #1e0640;
+}
+
+/* Ícones da lista */
+.item-lista .icon {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: transform 0.2s ease;
+}
+
+.item-lista .icon:hover {
+    transform: scale(1.1);
+}
+
+/* Animação suave */
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
