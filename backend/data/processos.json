@@ -1,0 +1,20 @@
+[
+    {
+        "id": "proc_002",
+        "numero_processo": "0005678-12.2023.8.26.0002",
+        "descricao": "A\u00e7\u00e3o de Despejo por Falta de Pagamento",
+        "cliente_nome": "Sra. Maria da Silva",
+        "responsavel_id": "user_adv_01",
+        "data_criacao": "2023-03-20T14:30:00Z",
+        "data_prazo": "2023-11-30T23:59:59Z"
+    },
+    {
+        "responsavel_id": "user_adv_02",
+        "descricao": "Execu\u00e7\u00e3o de T\u00edtulo Extrajudicial",
+        "numero_processo": "0009876-54.2023.8.26.0003",
+        "data_criacao": "2023-05-10T11:00:00Z",
+        "cliente_nome": "Banco ABC S.A.",
+        "data_prazo": "2024-01-20T23:59:59Z",
+        "id": "proc_003"
+    }
+]

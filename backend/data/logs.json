@@ -1,0 +1,27 @@
+
+[
+  {
+    "id": "log_001",
+    "timestamp": "2023-01-15T10:00:05Z",
+    "user_id": "user_adv_01",
+    "acao": "CRIACAO",
+    "entidade": "Documento",
+    "entidade_id": "doc_001"
+  },
+  {
+    "id": "log_002",
+    "timestamp": "2023-03-20T14:30:10Z",
+    "user_id": "user_adv_01",
+    "acao": "CRIACAO",
+    "entidade": "Processo",
+    "entidade_id": "proc_002"
+  },
+  {
+    "id": "log_003",
+    "timestamp": "2023-04-01T12:00:00Z",
+    "user_id": "user_est_01",
+    "acao": "LEITURA",
+    "entidade": "Processo",
+    "entidade_id": "proc_001"
+  }
+]

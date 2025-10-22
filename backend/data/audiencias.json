@@ -1,0 +1,17 @@
+
+[
+  {
+    "id": "aud_001",
+    "processo_id": "proc_001",
+    "data_hora": "2023-05-10T15:00:00Z",
+    "link_sala": "https://meet.google.com/xyz-abc-def",
+    "participantes_ids": ["user_adv_01"]
+  },
+  {
+    "id": "aud_002",
+    "processo_id": "proc_002",
+    "data_hora": "2023-06-22T10:30:00Z",
+    "link_sala": "https://meet.google.com/ghi-jkl-mno",
+    "participantes_ids": ["user_adv_01"]
+  }
+]

@@ -1,0 +1,27 @@
+
+[
+  {
+    "id": "doc_001",
+    "processo_id": "proc_001",
+    "titulo": "Petição Inicial",
+    "conteudo": "Conteúdo da petição inicial...",
+    "autor_id": "user_adv_01",
+    "data_criacao": "2023-01-15T10:00:00Z"
+  },
+  {
+    "id": "doc_002",
+    "processo_id": "proc_001",
+    "titulo": "Contestação",
+    "conteudo": "Conteúdo da contestação...",
+    "autor_id": "user_adv_01",
+    "data_criacao": "2023-02-01T11:00:00Z"
+  },
+  {
+    "id": "doc_003",
+    "processo_id": "proc_002",
+    "titulo": "Notificação Extrajudicial",
+    "conteudo": "Conteúdo da notificação...",
+    "autor_id": "user_adv_01",
+    "data_criacao": "2023-03-21T09:30:00Z"
+  }
+]
