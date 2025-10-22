@@ -97,7 +97,7 @@ function closeCreateDeadlineModal() {
   document.getElementById('createDeadlineModal').style.display = 'none';
 }
 
-function executeCreateDeadline() {
+async function executeCreateDeadline() {
   const processIdInput = document.getElementById('deadlineProcessIdInput');
   const dateInput = document.getElementById('deadlineDateInput');
   const descInput = document.getElementById('deadlineDescInput');
@@ -118,7 +118,31 @@ function executeCreateDeadline() {
   };
   
   closeCreateDeadlineModal();
-  hit('/api/deadlines', 'POST', deadlineData);
+
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await fetch('/api/deadlines', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(deadlineData)
+    });
+    
+    if (response.ok) {
+      alert('✅ Prazo criado com sucesso!');
+      if (typeof loadAllDeadlines === 'function') {
+        loadAllDeadlines();
+      }
+    } else {
+      const error = await response.json();
+      alert('❌ Erro ao criar prazo: ' + (error.error || 'Erro desconhecido'));
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    alert('❌ Erro ao criar prazo.');
+  }
 }
 
 // Criar Audiência
@@ -304,7 +328,7 @@ function closeDeleteDeadlineModal() {
   document.getElementById('deleteDeadlineModal').style.display = 'none';
 }
 
-function executeDeleteDeadline() {
+async function executeDeleteDeadline() {
   const deleteInput = document.getElementById('deleteDeadlineIdInput');
   const deadlineId = deleteInput.value.trim();
   
@@ -314,7 +338,30 @@ function executeDeleteDeadline() {
   }
   
   closeDeleteDeadlineModal();
-  hit(`/api/deadlines/${deadlineId}`, 'DELETE');
+  
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await fetch(`/api/deadlines/${deadlineId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      alert('✅ Prazo excluído com sucesso!');
+      if (typeof loadAllDeadlines === 'function') {
+        loadAllDeadlines();
+      }
+    } else {
+      const error = await response.json();
+      alert('❌ Erro ao excluir prazo: ' + (error.error || 'Prazo não encontrado'));
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    alert('❌ Erro ao excluir prazo.');
+  }
 }
 
 function deleteHearing() {
