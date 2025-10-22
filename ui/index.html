@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JurisFlow - Plataforma de Orquestração Jurídica</title>
   <link rel="stylesheet" href="/ui/styles.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
   <!-- Landing Page -->
   <div id="landingPage" class="landing-page">
@@ -15,7 +17,8 @@
       <div class="nav-content">
         <div class="logo">
           <div class="logo-image">
-                  <img src="/ui/logo.png" alt="JurisFlow" class="logo-img" onerror="this.onerror=null; this.src='/ui/logo.svg'" />
+            <img src="/ui/logo.png" alt="JurisFlow" class="logo-img"
+              onerror="this.onerror=null; this.src='/ui/logo.svg'" />
           </div>
           <span>JurisFlow</span>
         </div>
@@ -25,14 +28,15 @@
         </div>
       </div>
     </nav>
-    
+
     <main class="main main--full">
       <section class="section section--hero">
         <div class="container">
           <div class="hero__content">
             <h1 class="hero__title">Coordenação e Orquestração de Tarefas Jurídicas</h1>
-            <p class="hero__subtitle">Otimize a execução das atividades do seu escritório com nossa plataforma inteligente de orquestração</p>
-            
+            <p class="hero__subtitle">Otimize a execução das atividades do seu escritório com nossa plataforma
+              inteligente de orquestração</p>
+
             <div class="hero__features">
               <div class="feature">
                 <i class="fas fa-file-alt"></i>
@@ -50,15 +54,17 @@
                 <p>Gerencie audiências e compromissos com eficiência e precisão</p>
               </div>
             </div>
-            
+
             <div class="hero__actions">
-              <button class="btn btn--primary btn--large" onclick="NavigationService.showRegister()">Começar Agora</button>
-              <button class="btn btn--secondary btn--large" onclick="NavigationService.showLogin()">Já tenho conta</button>
+              <button class="btn btn--primary btn--large" onclick="NavigationService.showRegister()">Começar
+                Agora</button>
+              <button class="btn btn--secondary btn--large" onclick="NavigationService.showLogin()">Já tenho
+                conta</button>
             </div>
           </div>
         </div>
       </section>
-      
+
       <section class="section section--benefits">
         <div class="container">
           <div class="benefits__content">
@@ -98,6 +104,8 @@
   <div id="mainUI" style="display:none;" class="main-system">
     <div id="header-container"></div>
 
+    <input type="checkbox" class="checkbox-add" id="check" style="display: none;">
+
     <!-- Área Principal -->
     <main class="main">
       <!-- Cards de Funcionalidades -->
@@ -108,18 +116,16 @@
             <h3 class="card__title">Documentos</h3>
           </div>
           <div class="card__actions">
-            <button data-permission="read" onclick="DocumentService.list()" class="btn btn-action">
+            <a href="/ui/components/documentos.html" class="btn btn-action">
               <i class="fas fa-list"></i>
-              Listar Documentos
-            </button>
-            <button data-permission="write" onclick="DocumentService.showCreateModal()" class="btn btn-action">
+              Gerenciar Documentos
+            </a>
+
+            <label for="check" data-permission="write" onclick="" class="btn btn-action">
+
               <i class="fas fa-plus"></i>
               Criar Documento
-            </button>
-            <button data-permission="read" onclick="DocumentService.showSearchModal()" class="btn btn-action">
-              <i class="fas fa-search"></i>
-              Buscar Documento
-            </button>
+            </label>
           </div>
         </div>
 
@@ -171,7 +177,8 @@
             <h3 class="card__title">Processos</h3>
           </div>
           <div class="card__actions">
-            <button data-permission="read" onclick="window.open('/ui/components/process.html', '_blank')" class="btn btn-action">
+            <button data-permission="read" onclick="window.open('/ui/components/process.html', '_blank')"
+              class="btn btn-action">
               <i class="fas fa-list"></i>
               Listar Processos
             </button>
@@ -183,6 +190,20 @@
         </div>
       </div>
     </main>
+
+    <label for="check" class="overlay"></label>
+
+    <section class="add-doc__form">
+      <div class="add-doc__form-container">
+        <label for="check" class="btn-fechar-form">
+          <span class="fechar-form" style="cursor: pointer;">X</span>
+        </label>
+        <h2 class="add-doc__form-titulo">Adicionar Novo Documento</h2>
+        <input type="text" class="form-input titulo-documento" placeholder="Título do Documento">
+        <textarea type="text" class="form-input conteudo-documento" placeholder="Conteúdo do Documento"></textarea>
+        <button class="salvar-doc">Salvar Documento</button>
+      </div>
+    </section>
   </div>
 
   <!-- Modals -->
@@ -213,4 +234,5 @@
   <script type="module" src="/ui/js/app.js"></script>
   <script src="/ui/js/main.js"></script>
 </body>
+
 </html>
