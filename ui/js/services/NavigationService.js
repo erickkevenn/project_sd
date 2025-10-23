@@ -55,6 +55,13 @@ class NavigationService {
   }
 
   /**
+   * Show main system (alias for compatibility)
+   */
+  showMainSystem() {
+    this.showMain();
+  }
+
+  /**
    * Clear login form
    */
   clearLoginForm() {

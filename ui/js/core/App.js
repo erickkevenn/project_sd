@@ -22,6 +22,9 @@ class App {
     console.log('[App] Initializing JurisFlow application...');
     
     try {
+      // Load components first
+      await this.loadComponents();
+      
       // Load saved token
       const savedToken = localStorage.getItem("jwtToken");
       if (savedToken) {
@@ -34,9 +37,6 @@ class App {
       
       // Setup event listeners
       this.setupEventListeners();
-      
-      // Load components
-      await this.loadComponents();
       
       console.log('[App] Application initialized successfully');
     } catch (error) {
@@ -122,12 +122,33 @@ class App {
           const container = document.getElementById(component.id);
           if (container) {
             container.innerHTML = html;
+            
+            // After loading header, ensure back button is hidden on main screen
+            if (component.id === 'header-container') {
+              this.initializeHeader();
+            }
           }
         }
       } catch (error) {
         console.warn(`[App] Failed to load component ${component.file}:`, error);
       }
     }
+  }
+
+  /**
+   * Initialize header after loading
+   */
+  initializeHeader() {
+    // Hide back button on main screen (it should only show on standalone pages)
+    const btnBackHome = document.getElementById('btnBackHome');
+    if (btnBackHome) {
+      btnBackHome.style.display = 'none';
+    }
+    
+    // Define global goToMainScreen for compatibility
+    window.goToMainScreen = () => {
+      this.navigateTo('main');
+    };
   }
 
   /**

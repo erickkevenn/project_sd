@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>JurisFlow - Plataforma de Orquestração Jurídica</title>
   <link rel="stylesheet" href="/ui/styles.css">
+  <link rel="stylesheet" href="/ui/css/process.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -171,7 +172,7 @@
             <h3 class="card__title">Processos</h3>
           </div>
           <div class="card__actions">
-            <button data-permission="read" onclick="window.open('/ui/components/process.html', '_blank')" class="btn btn-action">
+            <button data-permission="read" onclick="window.location.href='/ui/components/process.html'" class="btn btn-action">
               <i class="fas fa-list"></i>
               Listar Processos
             </button>
@@ -205,6 +206,7 @@
   </div>
 
   <!-- Scripts -->
+  <script src="/ui/js/utils.js"></script>
   <script src="/ui/js/navigation.js"></script>
   <script src="/ui/js/auth.js"></script>
   <script src="/ui/js/api.js"></script>
