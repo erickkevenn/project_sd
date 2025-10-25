@@ -12,11 +12,13 @@
     <link rel="stylesheet" href="../css/process.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="../js/modals.js" defer></script>
-</head>
-
-<body>
     <!-- Header Placeholder -->
     <div id="header-placeholder"></div>
+
+</head>
+
+
+<body>
 
     <div class="process-container">
         <!-- Page Header -->
@@ -91,27 +93,6 @@
     <script>
         const API_BASE_URL = window.location.protocol + '//' + window.location.host;
         let allDeadlines = [];
-
-        document.addEventListener('DOMContentLoaded', async function () {
-            await loadHeader();
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                alert('Você precisa estar autenticado para acessar esta página.');
-                window.close();
-                return;
-            }
-            loadAllDeadlines();
-        });
-
-        async function loadHeader() {
-            try {
-                const response = await fetch('header.html');
-                const html = await response.text();
-                document.getElementById('header-placeholder').innerHTML = html;
-            } catch (error) {
-                console.error('Erro ao carregar header:', error);
-            }
-        }
 
         // API Helper
         async function apiRequest(endpoint, options = {}) {
@@ -388,6 +369,89 @@
         .col-date {
             font-family: 'Courier New', monospace;
         }
-    </style>
+
+        // Global function for back to home button
+        window.goToMainScreen = function() {
+            window.location.href = '/ui';
+        };
+
+        // AuthService for header logout button (standalone page compatibility)
+        window.AuthService = {
+            logout: function() {
+                if (confirm('Tem certeza que deseja sair?')) {
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/ui';
+                }
+            }
+        };
+    </script>
 </body>
 </html>
+<script>
+    async function loadHeader() {
+        try {
+            const response = await fetch('header.html');
+            const html = await response.text();
+            document.getElementById('header-placeholder').innerHTML = html;
+            
+            // Show the back home button since we're in a standalone page
+            const btnBackHome = document.getElementById('btnBackHome');
+            if (btnBackHome) {
+                // Use requestAnimationFrame for smoother display
+                requestAnimationFrame(() => {
+                    btnBackHome.style.display = 'inline-flex';
+                });
+            }
+            
+            // Update username after header loads
+            await updateUserInfo();
+        } catch (error) {
+            console.error('Error loading header:', error);
+        }
+    }
+    
+    /**
+     * Update user info in header
+     */
+    async function updateUserInfo() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) return;
+        
+        try {
+            const response = await fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const userNameBox = document.getElementById('userName');
+                const officeNameBox = document.getElementById('officeName');
+                
+                if (userNameBox && data.user && data.user.username) {
+                    userNameBox.textContent = data.user.username;
+                }
+                
+                if (officeNameBox && data.user && data.user.office) {
+                    officeNameBox.textContent = data.user.office;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user info:', error);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function () {
+        await loadHeader();
+
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert('Você precisa estar autenticado para acessar esta página.');
+            window.location.href = '/ui';
+            return;
+        }
+        loadAllDeadlines();
+    });
+</script>
