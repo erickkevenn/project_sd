@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos</title>
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="./documentos.css">
+</head>
+
+<body>
+    <!-- Header Component -->
+    <header class="header system-header-new">
+        <div class="header__content header-top">
+            <div class="header__brand office-info">
+                <div class="logo-system-new">
+                    <a href="../index.html" class="logo-image">
+                        <img src="/ui/logo.png" alt="JurisFlow" class="logo-img"
+                            onerror="this.onerror=null; this.src='/ui/logo.svg'" />
+                    </a>
+                    <span>JurisFlow</span>
+                </div>
+                <div class="office-details">
+                    <h2 id="officeName">Escritório</h2>
+                    <p>Plataforma de Orquestração Jurídica</p>
+                </div>
+            </div>
+
+            <div class="header__actions user-actions">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="userName">Usuário</span>
+                </div>
+                <button class="btn btn--danger btn-logout" onclick="AuthService.logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Sair
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="principal">
+        <section class="principal__container">
+            <div class="principal__container__conteudo">
+                <h2 class="principal__container-titulo">Documentos</h2>
+                <input type="text" class="busca-documentos"
+                    placeholder="Pesquise o documento pelo id ou pelo nome do autor">
+
+                <div class="principal__container__lista-de-documentos">
+                    <section class="lista-de-documentos__conteudo">
+                        <div class="checkbox__container">
+                            <input type="checkbox" class="checkbox-add" id="check" style="display: none;">
+                            <label for="check">
+                                <img src="./img/btn-add.svg" alt="botão de adicionar" class="add-doc"
+                                    style="cursor: pointer;">
+                            </label>
+
+                            <label for="check" class="overlay"></label>
+
+                            <section class="add-doc__form">
+                                <div class="add-doc__form-container">
+                                    <label for="check" class="btn-fechar-form">
+                                        <span class="fechar-form" style="cursor: pointer;">X</span>
+                                    </label>
+                                    <h2 class="add-doc__form-titulo">Adicionar Novo Documento</h2>
+                                    <input type="text" class="form-input titulo-documento"
+                                        placeholder="Título do Documento">
+                                    <textarea type="text" class="form-input conteudo-documento"
+                                        placeholder="Conteúdo do Documento"></textarea>
+                                    <button class="salvar-doc">Salvar Documento</button>
+                                </div>
+                            </section>
+                        </div>
+                        <h2 class="titulo__lista-de-documentos">Lista de documentos</h2>
+                    </section>
+
+                    <div class="lista-de-documetos__container">
+                        <input type="checkbox" id="edit-toggle" class="edit-checkbox" style="display: none;">
+
+                        <ul class="lista-conteudo">
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 1 - ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 2 - ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 3- ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+
+                            <li class="item-lista">
+                                <img src="./img/papel-icon.svg" alt="ícone de documento" class="icon documento">
+
+                                <p class="info-documento">Documento 4 - ID (xxxxxx) - Autor (Fulano de Tal)</p>
+
+                                <img src="./img/lixo-icon.svg" alt="ícone de lixo" class="icon lixo">
+                                <label for="edit-toggle">
+                                    <img src="./img/lápis-icon.svg" alt="ícone de lápis" class="icon lapis">
+                                </label>
+                            </li>
+                        </ul>
+
+                        <!-- Tela de edição -->
+
+                        <label class="edit-overlay" for="edit-toggle">
+                            <div class="edit-form">
+                                <label for="edit-toggle" class="btn-fechar-edit">
+                                        <span class="fechar-form" style="cursor: pointer;">X</span>
+                                    </label>
+                                <h2 class="edit-titulo">Editar Documento</h2>
+
+                                <input type="text" placeholder="Digite o novo título" class="form-input">
+
+                                <textarea placeholder="Digite o novo conteúdo" class="form-input"></textarea>
+
+                                <!-- Botão para fechar -->
+                                <label for="edit-toggle" class="salvar-doc">Salvar</label>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+</body>
+
+</html>
