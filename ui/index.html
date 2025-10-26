@@ -20,8 +20,8 @@
           <span>JurisFlow</span>
         </div>
         <div class="nav-buttons">
-          <button class="btn btn--secondary" onclick="NavigationService.showLogin()">Entrar</button>
-          <button class="btn btn--primary" onclick="NavigationService.showRegister()">Cadastrar Escritório</button>
+          <button class="btn btn--secondary" onclick="handleLoginClick()">Entrar</button>
+          <button class="btn btn--primary" onclick="handleRegisterClick()">Cadastrar Escritório</button>
         </div>
       </div>
     </nav>
@@ -216,5 +216,129 @@
   <script src="/ui/js/modals.js"></script>
   <script type="module" src="/ui/js/app.js"></script>
   <script src="/ui/js/main.js"></script>
+  
+  <!-- Fallback functions for navigation -->
+  <script>
+    // Fallback functions to handle navigation clicks
+    async function handleLoginClick() {
+      console.log('[Fallback] Login button clicked');
+      if (window.NavigationService && window.NavigationService.showLogin) {
+        console.log('[Fallback] Using NavigationService');
+        await window.NavigationService.showLogin();
+      } else {
+        console.log('[Fallback] NavigationService not available, using direct navigation');
+        // Direct navigation fallback
+        const landingPage = document.getElementById('landingPage');
+        let loginPage = document.getElementById('loginPage');
+        const registerPage = document.getElementById('registerPage');
+        const mainUI = document.getElementById('mainUI');
+        
+        if (landingPage) landingPage.style.display = 'none';
+        if (registerPage) registerPage.style.display = 'none';
+        if (mainUI) mainUI.style.display = 'none';
+        
+        if (loginPage) {
+          loginPage.style.display = 'block';
+          console.log('[Fallback] Login page displayed');
+          // Focus on username field
+          setTimeout(() => {
+            const usernameField = document.getElementById('username');
+            if (usernameField) {
+              usernameField.focus();
+            }
+          }, 100);
+        } else {
+          console.error('[Fallback] Login page not found, attempting to load component...');
+          // Try to load auth-pages component
+          try {
+            const response = await fetch('/ui/components/auth-pages.html');
+            if (response.ok) {
+              const html = await response.text();
+              const authContainer = document.getElementById('auth-pages-container');
+              if (authContainer) {
+                authContainer.innerHTML = html;
+                loginPage = document.getElementById('loginPage');
+                if (loginPage) {
+                  loginPage.style.display = 'block';
+                  console.log('[Fallback] Login page loaded via component fetch');
+                  setTimeout(() => {
+                    const usernameField = document.getElementById('username');
+                    if (usernameField) {
+                      usernameField.focus();
+                    }
+                  }, 100);
+                  return;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('[Fallback] Failed to load component:', error);
+          }
+          
+          alert('Erro: Página de login não encontrada. Recarregue a página.');
+        }
+      }
+    }
+    
+    async function handleRegisterClick() {
+      console.log('[Fallback] Register button clicked');
+      if (window.NavigationService && window.NavigationService.showRegister) {
+        console.log('[Fallback] Using NavigationService');
+        await window.NavigationService.showRegister();
+      } else {
+        console.log('[Fallback] NavigationService not available, using direct navigation');
+        // Direct navigation fallback
+        const landingPage = document.getElementById('landingPage');
+        const loginPage = document.getElementById('loginPage');
+        let registerPage = document.getElementById('registerPage');
+        const mainUI = document.getElementById('mainUI');
+        
+        if (landingPage) landingPage.style.display = 'none';
+        if (loginPage) loginPage.style.display = 'none';
+        if (mainUI) mainUI.style.display = 'none';
+        
+        if (registerPage) {
+          registerPage.style.display = 'block';
+          console.log('[Fallback] Register page displayed');
+          // Focus on office name field
+          setTimeout(() => {
+            const officeNameField = document.getElementById('officeName');
+            if (officeNameField) {
+              officeNameField.focus();
+            }
+          }, 100);
+        } else {
+          console.error('[Fallback] Register page not found, attempting to load component...');
+          // Try to load auth-pages component
+          try {
+            const response = await fetch('/ui/components/auth-pages.html');
+            if (response.ok) {
+              const html = await response.text();
+              const authContainer = document.getElementById('auth-pages-container');
+              if (authContainer) {
+                authContainer.innerHTML = html;
+                registerPage = document.getElementById('registerPage');
+                if (registerPage) {
+                  registerPage.style.display = 'block';
+                  console.log('[Fallback] Register page loaded via component fetch');
+                  setTimeout(() => {
+                    const officeNameField = document.getElementById('officeName');
+                    if (officeNameField) {
+                      officeNameField.focus();
+                    }
+                  }, 100);
+                  return;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('[Fallback] Failed to load component:', error);
+          }
+          
+          alert('Erro: Página de cadastro não encontrada. Recarregue a página.');
+        }
+      }
+    }
+  </script>
 </body>
 </html>

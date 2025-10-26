@@ -17,15 +17,28 @@ class NavigationService {
   /**
    * Show login page
    */
-  showLogin() {
+  async showLogin() {
     this.clearLoginForm();
-    this.app.navigateTo('login');
+    await this.app.navigateTo('login');
     
-    // Focus on username field
+    // Focus on username field after ensuring page is loaded
     setTimeout(() => {
       const usernameField = document.getElementById('username');
       if (usernameField) {
         usernameField.focus();
+        console.log('[NavigationService] Login page loaded and focused');
+      } else {
+        console.warn('[NavigationService] Username field not found, retrying...');
+        // Retry after a longer delay
+        setTimeout(() => {
+          const retryUsernameField = document.getElementById('username');
+          if (retryUsernameField) {
+            retryUsernameField.focus();
+            console.log('[NavigationService] Username field focused on retry');
+          } else {
+            console.error('[NavigationService] Username field not found after retry');
+          }
+        }, 500);
       }
     }, 100);
   }
@@ -33,16 +46,30 @@ class NavigationService {
   /**
    * Show register page
    */
-  showRegister() {
+  async showRegister() {
     this.clearRegisterForm();
-    this.app.navigateTo('register');
+    await this.app.navigateTo('register');
     
-    // Reset OAB field and focus on office name
+    // Reset OAB field and focus on office name after ensuring page is loaded
     setTimeout(() => {
       this.app.getService('auth')?.toggleOabField();
       const officeNameField = document.getElementById('officeName');
       if (officeNameField) {
         officeNameField.focus();
+        console.log('[NavigationService] Register page loaded and focused');
+      } else {
+        console.warn('[NavigationService] Office name field not found, retrying...');
+        // Retry after a longer delay
+        setTimeout(() => {
+          this.app.getService('auth')?.toggleOabField();
+          const retryOfficeNameField = document.getElementById('officeName');
+          if (retryOfficeNameField) {
+            retryOfficeNameField.focus();
+            console.log('[NavigationService] Office name field focused on retry');
+          } else {
+            console.error('[NavigationService] Office name field not found after retry');
+          }
+        }, 500);
       }
     }, 100);
   }

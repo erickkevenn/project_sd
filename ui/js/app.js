@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Register core services
     app.registerService('api', new ApiService(app));
+    app.getService('api').baseURL = 'http://localhost:8000';
     app.registerService('auth', new AuthService(app));
     app.registerService('navigation', new NavigationService(app));
     app.registerService('permission', new PermissionService(app));

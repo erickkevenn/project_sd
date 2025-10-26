@@ -22,6 +22,15 @@ class App {
     console.log('[App] Initializing JurisFlow application...');
     
     try {
+<<<<<<< Updated upstream
+=======
+      // Load components first and ensure they're available
+      await this.loadComponents();
+      
+      // Verify critical components are loaded
+      await this.ensureComponentsLoaded();
+      
+>>>>>>> Stashed changes
       // Load saved token
       const savedToken = localStorage.getItem("jwtToken");
       if (savedToken) {
@@ -73,7 +82,7 @@ class App {
    * Navigate to a specific page
    * @param {string} page - Page identifier
    */
-  navigateTo(page) {
+  async navigateTo(page) {
     console.log(`[App] Navigating to: ${page}`);
     
     // Hide all pages
@@ -89,17 +98,109 @@ class App {
     this.state.currentPage = page;
     switch (page) {
       case 'landing':
-        document.getElementById('landingPage').style.display = 'block';
+        const landingPage = document.getElementById('landingPage');
+        if (landingPage) {
+          landingPage.style.display = 'block';
+        }
         break;
       case 'login':
-        document.getElementById('loginPage').style.display = 'block';
+        await this.ensureLoginPageAvailable();
         break;
       case 'register':
-        document.getElementById('registerPage').style.display = 'block';
+        await this.ensureRegisterPageAvailable();
         break;
       case 'main':
-        document.getElementById('mainUI').style.display = 'block';
+        const mainUI = document.getElementById('mainUI');
+        if (mainUI) {
+          mainUI.style.display = 'block';
+        }
         break;
+    }
+  }
+
+  /**
+   * Ensure login page is available and show it
+   */
+  async ensureLoginPageAvailable() {
+    let loginPage = document.getElementById('loginPage');
+    
+    if (!loginPage) {
+      console.warn('[App] Login page not found, loading components...');
+      await this.loadComponents();
+      loginPage = document.getElementById('loginPage');
+    }
+    
+    if (loginPage) {
+      loginPage.style.display = 'block';
+      console.log('[App] Login page displayed successfully');
+    } else {
+      console.error('[App] Failed to load login page after retry');
+      // Try to load auth-pages component directly
+      try {
+        console.log('[App] Attempting direct component load...');
+        const response = await fetch('/ui/components/auth-pages.html');
+        if (response.ok) {
+          const html = await response.text();
+          const authContainer = document.getElementById('auth-pages-container');
+          if (authContainer) {
+            authContainer.innerHTML = html;
+            const retryLoginPage = document.getElementById('loginPage');
+            if (retryLoginPage) {
+              retryLoginPage.style.display = 'block';
+              console.log('[App] Login page loaded via direct component fetch');
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[App] Direct component load failed:', error);
+      }
+      
+      // Show error to user
+      alert('Erro ao carregar a página de login. Recarregue a página.');
+    }
+  }
+
+  /**
+   * Ensure register page is available and show it
+   */
+  async ensureRegisterPageAvailable() {
+    let registerPage = document.getElementById('registerPage');
+    
+    if (!registerPage) {
+      console.warn('[App] Register page not found, loading components...');
+      await this.loadComponents();
+      registerPage = document.getElementById('registerPage');
+    }
+    
+    if (registerPage) {
+      registerPage.style.display = 'block';
+      console.log('[App] Register page displayed successfully');
+    } else {
+      console.error('[App] Failed to load register page after retry');
+      // Try to load auth-pages component directly
+      try {
+        console.log('[App] Attempting direct component load...');
+        const response = await fetch('/ui/components/auth-pages.html');
+        if (response.ok) {
+          const html = await response.text();
+          const authContainer = document.getElementById('auth-pages-container');
+          if (authContainer) {
+            authContainer.innerHTML = html;
+            const retryRegisterPage = document.getElementById('registerPage');
+            if (retryRegisterPage) {
+              retryRegisterPage.style.display = 'block';
+              console.log('[App] Register page loaded via direct component fetch');
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[App] Direct component load failed:', error);
+      }
+      
+      // Show error to user
+      alert('Erro ao carregar a página de cadastro. Recarregue a página.');
     }
   }
 
@@ -108,29 +209,90 @@ class App {
    */
   async loadComponents() {
     const components = [
-      { id: 'navigation-container', file: 'components/navigation.html' },
-      { id: 'header-container', file: 'components/header.html' },
-      { id: 'auth-pages-container', file: 'components/auth-pages.html' },
-      { id: 'modals-container', file: 'components/modals.html' }
+      { id: 'navigation-container', file: 'ui/components/navigation.html' },
+      { id: 'header-container', file: 'ui/components/header.html' },
+      { id: 'auth-pages-container', file: 'ui/components/auth-pages.html' },
+      { id: 'modals-container', file: 'ui/components/modals.html' }
     ];
     
     for (const component of components) {
       try {
-        const response = await fetch(`/ui/${component.file}`);
+        console.log(`[App] Loading component: ${component.file}`);
+        const response = await fetch(`/${component.file}`);
         if (response.ok) {
           const html = await response.text();
           const container = document.getElementById(component.id);
           if (container) {
             container.innerHTML = html;
+<<<<<<< Updated upstream
+=======
+            console.log(`[App] Component ${component.id} loaded successfully`);
+            
+            // After loading header, ensure back button is hidden on main screen
+            if (component.id === 'header-container') {
+              this.initializeHeader();
+            }
+          } else {
+            console.warn(`[App] Container ${component.id} not found in DOM`);
+>>>>>>> Stashed changes
           }
+        } else {
+          console.error(`[App] Failed to fetch component ${component.file}: ${response.status} ${response.statusText}`);
         }
       } catch (error) {
-        console.warn(`[App] Failed to load component ${component.file}:`, error);
+        console.error(`[App] Failed to load component ${component.file}:`, error);
       }
     }
   }
 
   /**
+<<<<<<< Updated upstream
+=======
+   * Ensure critical components are loaded
+   */
+  async ensureComponentsLoaded() {
+    const criticalElements = ['loginPage', 'registerPage'];
+    let retries = 0;
+    const maxRetries = 5;
+    
+    while (retries < maxRetries) {
+      const missingElements = criticalElements.filter(id => !document.getElementById(id));
+      
+      if (missingElements.length === 0) {
+        console.log('[App] All critical components loaded successfully');
+        return;
+      }
+      
+      console.log(`[App] Missing components: ${missingElements.join(', ')}, retrying... (${retries + 1}/${maxRetries})`);
+      
+      // Wait a bit and try loading components again
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await this.loadComponents();
+      
+      retries++;
+    }
+    
+    console.warn('[App] Some critical components may not be available');
+  }
+
+  /**
+   * Initialize header after loading
+   */
+  initializeHeader() {
+    // Hide back button on main screen (it should only show on standalone pages)
+    const btnBackHome = document.getElementById('btnBackHome');
+    if (btnBackHome) {
+      btnBackHome.style.display = 'none';
+    }
+    
+    // Define global goToMainScreen for compatibility
+    window.goToMainScreen = () => {
+      this.navigateTo('main');
+    };
+  }
+
+  /**
+>>>>>>> Stashed changes
    * Load user information
    */
   async loadUserInfo() {
@@ -142,7 +304,9 @@ class App {
     try {
       const response = await this.services.api?.get('/api/auth/me');
       if (response && response.ok) {
-        this.state.user = response.data.user;
+        console.log('[App] Raw user data from /api/auth/me:', response.data);
+        this.state.user = response.data;
+        console.log('[App] User state after /me response:', this.state.user);
         this.updateUserInterface();
         this.services.permission?.applyControl(this.state.user.permissions);
       } else {

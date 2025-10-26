@@ -1,0 +1,11 @@
+admin
+admin@escritorio.com
+admin123
+
+advgoado
+adv.um@escritorio.com
+admin123
+
+estagiario
+est.um@escritorio.com
+admin123

@@ -3,6 +3,8 @@ API Gateway Principal - Versão Refatorada
 Implementa arquitetura limpa e padrões de código limpo
 """
 
+import requests
+
 from flask import Flask, request, jsonify, send_from_directory
 import os
 import logging
@@ -14,13 +16,18 @@ from flask_talisman import Talisman
 # Imports locais
 from config import get_config
 from middleware import setup_middleware, protocol_selector
-from services import ServiceClient, HealthChecker, GrpcClient
+from services import ServiceClient, HealthChecker
 from security import (
     require_auth, require_permission, require_role, validate_json,
-    LoginSchema, DocumentSchema, DeadlineSchema, HearingSchema,
-    authenticate_user, generate_token, log_security_event
+    LoginSchema, log_security_event
 )
 from exceptions import GatewayException
+
+# Importa schemas do módulo compartilhado
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from shared.validation import DocumentSchema, DeadlineSchema, HearingSchema, ProcessSchema
 
 # Configuração
 config = get_config()
@@ -41,16 +48,7 @@ def create_app():
         format=config.LOG_FORMAT
     )
     
-    # CORS
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": config.ALLOWED_ORIGINS,
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Correlation-ID"]
-        },
-        r"/ui": {"origins": config.ALLOWED_ORIGINS},
-        r"/health": {"origins": config.ALLOWED_ORIGINS}
-    })
+    CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"], "allow_headers": "*"}})
     
     # Rate Limiting
     limiter = Limiter(
@@ -72,17 +70,37 @@ def create_app():
     setup_middleware(app)
     
     # Serviços
+    health_checker = HealthChecker()
     service_client = ServiceClient()
-    grpc_client = GrpcClient()
-    health_checker = HealthChecker(service_client)
     
     # Registra rotas
-    register_routes(app, service_client, grpc_client, health_checker, limiter)
+    register_routes(app, health_checker, limiter, service_client)
     
     return app
 
-def register_routes(app, service_client, grpc_client, health_checker, limiter):
+def register_routes(app, health_checker, limiter, service_client):
     """Registra todas as rotas da aplicação"""
+
+    def forward_request(service_name, path, method="GET", json_data=None, params=None):
+        """Forwards a request to a microservice."""
+        try:
+            url = f"{config.SERVICES[service_name]}{path}"
+            headers = {}
+            if 'Authorization' in request.headers:
+                headers['Authorization'] = request.headers['Authorization']
+
+            response = requests.request(
+                method,
+                url,
+                json=json_data,
+                params=params,
+                headers=headers,
+                timeout=config.REQUEST_TIMEOUT
+            )
+            return jsonify(response.json()), response.status_code
+        except requests.exceptions.RequestException as e:
+            log_security_event("SERVICE_ERROR", f"Error calling {service_name}: {str(e)}")
+            return jsonify({"error": f"Error calling {service_name}"}), 502
     
     # === Rotas de UI ===
     @app.route("/")
@@ -125,19 +143,6 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         """Endpoint de health check"""
         try:
             health_info = health_checker.check_all_services()
-            
-            # Adiciona informações sobre gRPC se disponível
-            try:
-                if grpc_client.is_available():
-                    health_info["grpc"] = {
-                        "status": "available",
-                        "services": list(grpc_client.channels.keys())
-                    }
-                else:
-                    health_info["grpc"] = {"status": "unavailable"}
-            except Exception:
-                health_info["grpc"] = {"status": "unavailable"}
-            
             status_code = 200 if health_info["status"] == "healthy" else 503
             return jsonify(health_info), status_code
         except Exception as e:
@@ -149,37 +154,28 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             }), 500
     
     # === Rotas de Autenticação ===
+    @app.route("/api/<path:path>", methods=['OPTIONS'])
+    def handle_options(path):
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
+        response.headers.add('Access-Control-Allow-Headers', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH')
+        return response
+
     @app.post("/api/auth/login")
     @limiter.limit(config.LOGIN_RATE_LIMIT)
     @validate_json(LoginSchema)
     def login():
         """Endpoint de login com autenticação"""
         try:
-            data = request.validated_data
-            username = data['username']
-            password = data['password']
-            
-            # Autentica usuário
-            user = authenticate_user(username, password)
-            if not user:
-                log_security_event("LOGIN_FAILED", f"Failed login attempt for {username} from {request.remote_addr}")
-                return jsonify({"error": "Invalid credentials"}), 401
-            
-            # Gera token JWT
-            token = generate_token(username, user['roles'], user['permissions'])
-            
-            log_security_event("LOGIN_SUCCESS", f"Successful login for {username} from {request.remote_addr}")
-            
-            return jsonify({
-                "token": token,
-                "user": {
-                    "username": username,
-                    "roles": user['roles'],
-                    "permissions": user['permissions']
-                }
-            }), 200
-            
-        except Exception as e:
+            # Transforma os dados para o formato esperado pelo serviço de autenticação
+            auth_data = {
+                "login": request.validated_data["username"],
+                "senha": request.validated_data["password"]
+            }
+            response = requests.post(f"{config.SERVICES['auth']}/login", json=auth_data)
+            return jsonify(response.json()), response.status_code
+        except requests.exceptions.RequestException as e:
             log_security_event("LOGIN_ERROR", f"Login error: {str(e)}")
             return jsonify({"error": "Login failed"}), 500
     
@@ -187,57 +183,74 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @require_auth
     def get_current_user():
         """Retorna informações do usuário atual"""
-        return jsonify({
-            "user": {
-                "username": request.current_user['username'],
-                "roles": request.current_user['roles'],
-                "permissions": request.current_user['permissions']
-            }
-        }), 200
+        try:
+            headers = {'Authorization': request.headers.get('Authorization')}
+            response = requests.get(f"{config.SERVICES['auth']}/me", headers=headers)
+            return jsonify(response.json()), response.status_code
+        except requests.exceptions.RequestException as e:
+            log_security_event("AUTH_ME_ERROR", f"Error getting current user: {str(e)}")
+            return jsonify({"error": "Failed to get user information"}), 500
     
+    # === Rotas de Processos ===
+    @app.get("/api/processes")
+    @require_auth
+    @require_permission("read")
+    @limiter.limit("30 per minute")
+    def list_processes():
+        """Lista todos os processos"""
+        return forward_request("processes", "/processes", params=request.args)
+
+    @app.post("/api/processes")
+    @require_auth
+    @require_permission("write")
+    @validate_json(ProcessSchema)
+    @limiter.limit("10 per minute")
+    def create_process():
+        """Cria um novo processo"""
+        return forward_request("processes", "/processes", method="POST", json_data=request.validated_data)
+
+    @app.get("/api/processes/<process_id>")
+    @require_auth
+    @require_permission("read")
+    @limiter.limit("30 per minute")
+    def get_process(process_id):
+        """Obtém um processo específico"""
+        return forward_request("processes", f"/processes/{process_id}")
+
+    @app.put("/api/processes/<process_id>")
+    @require_auth
+    @require_permission("write")
+    @validate_json(ProcessSchema)
+    @limiter.limit("10 per minute")
+    def update_process(process_id):
+        """Atualiza um processo"""
+        return forward_request("processes", f"/processes/{process_id}", method="PUT", json_data=request.validated_data)
+
+    @app.delete("/api/processes/<process_id>")
+    @require_auth
+    @require_permission("delete")
+    @limiter.limit("10 per minute")
+    def delete_process(process_id):
+        """Remove um processo específico"""
+        return forward_request("processes", f"/processes/{process_id}", method="DELETE")
+
     # === Rotas de Documentos ===
     @app.get("/api/documents")
     @require_auth
     @require_permission("read")
-    @protocol_selector()
     @limiter.limit("30 per minute")
     def list_documents():
         """Lista todos os documentos"""
-        try:
-            # Verifica se deve usar gRPC
-            if getattr(request, 'prefer_grpc', False) and grpc_client.is_available('documents'):
-                response_data, status_code = grpc_client.call_service(
-                    "documents", "ListItems", {"limit": 100, "offset": 0}
-                )
-            else:
-                response_data, status_code = service_client.forward_request(
-                    "documents", "GET", "/documents"
-                )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("documents", "/documents", params=request.args)
     
     @app.post("/api/documents")
     @require_auth
     @require_permission("write")
     @validate_json(DocumentSchema)
-    @protocol_selector()
     @limiter.limit("10 per minute")
     def create_document():
         """Cria um novo documento"""
-        try:
-            # Verifica se deve usar gRPC
-            if getattr(request, 'prefer_grpc', False) and grpc_client.is_available('documents'):
-                response_data, status_code = grpc_client.call_service(
-                    "documents", "CreateItem", request.validated_data
-                )
-            else:
-                response_data, status_code = service_client.forward_request(
-                    "documents", "POST", "/documents", json_body=request.validated_data
-                )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("documents", "/documents", method="POST", json_data=request.validated_data)
     
     @app.get("/api/documents/<doc_id>")
     @require_auth
@@ -245,13 +258,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("30 per minute")
     def get_document(doc_id):
         """Obtém um documento específico"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "documents", "GET", f"/documents/{doc_id}"
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("documents", f"/documents/{doc_id}")
     
     @app.delete("/api/documents/<doc_id>")
     @require_auth
@@ -259,13 +266,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("10 per minute")
     def delete_document(doc_id):
         """Remove um documento específico"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "documents", "DELETE", f"/documents/{doc_id}"
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("documents", f"/documents/{doc_id}", method="DELETE")
     
     # === Rotas de Prazos ===
     @app.get("/api/deadlines")
@@ -274,13 +275,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("30 per minute")
     def list_deadlines():
         """Lista todos os prazos"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "deadlines", "GET", "/deadlines"
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("deadlines", "/deadlines")
     
     @app.post("/api/deadlines")
     @require_auth
@@ -289,13 +284,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("10 per minute")
     def create_deadline():
         """Cria um novo prazo"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "deadlines", "POST", "/deadlines", json_body=request.validated_data
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("deadlines", "/deadlines", method="POST", json_data=request.validated_data)
     
     @app.get("/api/deadlines/today")
     @require_auth
@@ -303,27 +292,9 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("30 per minute")
     def deadlines_today():
         """Lista prazos de hoje"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "deadlines", "GET", "/deadlines/today"
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("deadlines", "/deadlines/today")
     
-    @app.delete("/api/deadlines/<deadline_id>")
-    @require_auth
-    @require_permission("delete")
-    @limiter.limit("10 per minute")
-    def delete_deadline(deadline_id):
-        """Remove um prazo específico"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "deadlines", "DELETE", f"/deadlines/{deadline_id}"
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+
     
     # === Rotas de Audiências ===
     @app.get("/api/hearings")
@@ -332,13 +303,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("30 per minute")
     def list_hearings():
         """Lista audiências com filtros opcionais"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "hearings", "GET", "/hearings", params=request.args
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("hearings", "/hearings", params=request.args)
     
     @app.get("/api/hearings/today")
     @require_auth
@@ -346,13 +311,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("30 per minute")
     def hearings_today():
         """Lista audiências de hoje"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "hearings", "GET", "/hearings/today"
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("hearings", "/hearings/today")
     
     @app.post("/api/hearings")
     @require_auth
@@ -361,13 +320,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("10 per minute")
     def create_hearing():
         """Cria uma nova audiência"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "hearings", "POST", "/hearings", json_body=request.validated_data
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("hearings", "/hearings", method="POST", json_data=request.validated_data)
     
     @app.delete("/api/hearings/<hearing_id>")
     @require_auth
@@ -375,13 +328,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @limiter.limit("10 per minute")
     def delete_hearing(hearing_id):
         """Remove uma audiência específica"""
-        try:
-            response_data, status_code = service_client.forward_request(
-                "hearings", "DELETE", f"/hearings/{hearing_id}"
-            )
-            return jsonify(response_data), status_code
-        except GatewayException as e:
-            return jsonify({"error": e.message}), e.status_code
+        return forward_request("hearings", f"/hearings/{hearing_id}", method="DELETE")
     
     # === Rotas de Orquestração ===
     @app.get("/api/process/<proc_id>/summary")

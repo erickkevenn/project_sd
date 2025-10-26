@@ -17,64 +17,24 @@ function showLanding() {
   if (mainUI) mainUI.style.display = 'none';
 }
 
+// DEPRECATED: Use NavigationService.showLogin() instead
 function showLogin() {
-  const landingPage = document.getElementById('landingPage');
-  const loginPage = document.getElementById('loginPage');
-  const registerPage = document.getElementById('registerPage');
-  const mainUI = document.getElementById('mainUI');
-  
-  if (landingPage) landingPage.style.display = 'none';
-  if (loginPage) loginPage.style.display = 'block';
-  if (registerPage) registerPage.style.display = 'none';
-  if (mainUI) mainUI.style.display = 'none';
-  
-  // Limpa os campos
-  const username = document.getElementById('username');
-  const password = document.getElementById('password');
-  const loginStatus = document.getElementById('loginStatus');
-  
-  if (username) username.value = '';
-  if (password) password.value = '';
-  if (loginStatus) loginStatus.textContent = '';
-  
-  // Foca no campo de usuário
-  setTimeout(() => {
-    if (username) username.focus();
-  }, 100);
+  console.warn('[navigation.js] showLogin() is deprecated. Use NavigationService.showLogin() instead.');
+  if (window.NavigationService) {
+    window.NavigationService.showLogin();
+  } else {
+    console.error('[navigation.js] NavigationService not available');
+  }
 }
 
+// DEPRECATED: Use NavigationService.showRegister() instead
 function showRegister() {
-  const landingPage = document.getElementById('landingPage');
-  const loginPage = document.getElementById('loginPage');
-  const registerPage = document.getElementById('registerPage');
-  const mainUI = document.getElementById('mainUI');
-  
-  if (landingPage) landingPage.style.display = 'none';
-  if (loginPage) loginPage.style.display = 'none';
-  if (registerPage) registerPage.style.display = 'block';
-  if (mainUI) mainUI.style.display = 'none';
-  
-  // Limpa os campos
-  const fields = ['officeName', 'cnpj', 'responsibleName', 'oabNumber', 'email', 'phone', 'newUsername', 'newPassword', 'confirmPassword'];
-  fields.forEach(field => {
-    const element = document.getElementById(field);
-    if (element) element.value = '';
-  });
-  
-  const userType = document.getElementById('userType');
-  const acceptTerms = document.getElementById('acceptTerms');
-  const registerStatus = document.getElementById('registerStatus');
-  
-  if (userType) userType.value = '';
-  if (acceptTerms) acceptTerms.checked = false;
-  if (registerStatus) registerStatus.textContent = '';
-  
-  // Redefine a exibição do campo OAB
-  setTimeout(() => {
-    toggleOabField();
-    const officeName = document.getElementById('officeName');
-    if (officeName) officeName.focus();
-  }, 100);
+  console.warn('[navigation.js] showRegister() is deprecated. Use NavigationService.showRegister() instead.');
+  if (window.NavigationService) {
+    window.NavigationService.showRegister();
+  } else {
+    console.error('[navigation.js] NavigationService not available');
+  }
 }
 
 function showMainSystem() {

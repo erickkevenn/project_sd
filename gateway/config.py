@@ -19,9 +19,11 @@ class Config:
     # Portas e URLs
     GATEWAY_PORT = int(os.getenv("GATEWAY_PORT", "8000"))
     SERVICES = {
-        "documents": os.getenv("DOCUMENTS_URL", "http://127.0.0.1:5001"),
-        "deadlines": os.getenv("DEADLINES_URL", "http://127.0.0.1:5002"),
-        "hearings": os.getenv("HEARINGS_URL", "http://127.0.0.1:5003"),
+        "auth": os.getenv("AUTH_URL", "http://127.0.0.1:5001"),
+        "processes": os.getenv("PROCESSES_URL", "http://127.0.0.1:5002"),
+        "documents": os.getenv("DOCUMENTS_URL", "http://127.0.0.1:5003"),
+        "deadlines": os.getenv("DEADLINES_URL", "http://127.0.0.1:5004"),
+        "hearings": os.getenv("HEARINGS_URL", "http://127.0.0.1:5005"),
     }
     
     # Configurações gRPC
@@ -37,7 +39,7 @@ class Config:
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "5"))
     
     # CORS
-    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:8000').split(',')
+    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:8000,http://localhost:8080').split(',')
     
     # Rate Limiting
     RATE_LIMIT_STORAGE = os.getenv("RATELIMIT_STORAGE_URL", "memory://")

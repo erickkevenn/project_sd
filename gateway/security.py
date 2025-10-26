@@ -42,25 +42,11 @@ class LoginSchema(Schema):
     username = fields.Str(required=True, validate=lambda x: len(x) >= 3)
     password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
 
-class DocumentSchema(Schema):
-    """Schema para validação de documentos"""
-    title = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    content = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    author = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    process_id = fields.Str(missing=None)
-
-class DeadlineSchema(Schema):
-    """Schema para validação de prazos"""
-    process_id = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    due_date = fields.Str(required=True)  # Aceita string de data no formato YYYY-MM-DD
-    description = fields.Str(missing="")
-
-class HearingSchema(Schema):
-    """Schema para validação de audiências"""
-    process_id = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    date = fields.Str(required=True)  # Aceita string de data no formato YYYY-MM-DD
-    courtroom = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
-    description = fields.Str(missing="")
+# Importa schemas do módulo compartilhado
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from shared.validation import DocumentSchema, DeadlineSchema, HearingSchema, ProcessSchema
 
 def hash_password(password: str) -> str:
     """Gera hash da senha usando SHA-256"""

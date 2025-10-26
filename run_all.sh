@@ -258,7 +258,7 @@ fi
 
 # Verificar se os arquivos de serviço existem
 info "Verificando arquivos necessários..."
-REQUIRED_FILES=("services/documents_service.py" "services/deadlines_service.py" "services/hearings_service.py" "gateway/app.py")
+REQUIRED_FILES=("services/auth_service/app.py" "services/processes_service/app.py" "services/documents_service/app.py" "services/deadlines_service/app.py" "services/hearings_service/app.py" "gateway/app.py")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "$file" ]; then
         error "Arquivo necessário não encontrado: $file"
@@ -303,7 +303,7 @@ check_port() {
     fi
 }
 
-PORTS=(5001 5002 5003 8000)
+PORTS=(5001 5002 5003 5004 5005 8000)
 BUSY_PORTS=()
 
 for port in "${PORTS[@]}"; do
@@ -327,6 +327,8 @@ fi
 cleanup() {
     echo
     log "Encerrando serviços..."
+    if [ -n "${AUTH_PID:-}" ]; then kill $AUTH_PID 2>/dev/null || true; fi
+    if [ -n "${PROC_PID:-}" ]; then kill $PROC_PID 2>/dev/null || true; fi
     if [ -n "${DOCS_PID:-}" ]; then kill $DOCS_PID 2>/dev/null || true; fi
     if [ -n "${DEAD_PID:-}" ]; then kill $DEAD_PID 2>/dev/null || true; fi
     if [ -n "${HEAR_PID:-}" ]; then kill $HEAR_PID 2>/dev/null || true; fi
@@ -336,7 +338,7 @@ cleanup() {
     sleep 2
     
     # Forçar kill se necessário
-    for pid in "${DOCS_PID:-}" "${DEAD_PID:-}" "${HEAR_PID:-}" "${GATE_PID:-}"; do
+    for pid in "${AUTH_PID:-}" "${PROC_PID:-}" "${DOCS_PID:-}" "${DEAD_PID:-}" "${HEAR_PID:-}" "${GATE_PID:-}"; do
         if [ -n "$pid" ] && kill -0 $pid 2>/dev/null; then
             warn "Forçando encerramento do processo $pid"
             kill -9 $pid 2>/dev/null || true
@@ -353,16 +355,24 @@ trap cleanup INT TERM EXIT
 # Iniciar serviços
 log "Iniciando serviços..."
 
-log "Iniciando Serviço de Documentos (porta 5001)..."
-( python services/documents_service.py ) & DOCS_PID=$!
+log "Iniciando Serviço de Autenticação (porta 5001)..."
+( python services/auth_service/app.py ) & AUTH_PID=$!
 sleep 1
 
-log "Iniciando Serviço de Prazos (porta 5002)..."
-( python services/deadlines_service.py ) & DEAD_PID=$!
+log "Iniciando Serviço de Processos (porta 5002)..."
+( python services/processes_service/app.py ) & PROC_PID=$!
 sleep 1
 
-log "Iniciando Serviço de Audiências (porta 5003)..."
-( python services/hearings_service.py ) & HEAR_PID=$!
+log "Iniciando Serviço de Documentos (porta 5003)..."
+( python services/documents_service/app.py ) & DOCS_PID=$!
+sleep 1
+
+log "Iniciando Serviço de Prazos (porta 5004)..."
+( python services/deadlines_service/app.py ) & DEAD_PID=$!
+sleep 1
+
+log "Iniciando Serviço de Audiências (porta 5005)..."
+( python services/hearings_service/app.py ) & HEAR_PID=$!
 sleep 1
 
 log "Iniciando API Gateway (porta 8000)..."
@@ -437,9 +447,11 @@ if [ "$SERVICES_OK" = true ]; then
     echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo
     log "PIDs dos processos:"
-    info "  • Documentos:  $DOCS_PID (porta 5001)"
-    info "  • Prazos:      $DEAD_PID (porta 5002)"
-    info "  • Audiências:  $HEAR_PID (porta 5003)"
+    info "  • Autenticação: $AUTH_PID (porta 5001)"
+    info "  • Processos:   $PROC_PID (porta 5002)"
+    info "  • Documentos:  $DOCS_PID (porta 5003)"
+    info "  • Prazos:      $DEAD_PID (porta 5004)"
+    info "  • Audiências:  $HEAR_PID (porta 5005)"
     info "  • API Gateway: $GATE_PID (porta 8000)"
     echo
     log "URLs de acesso:"
