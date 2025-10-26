@@ -258,7 +258,7 @@ fi
 
 # Verificar se os arquivos de serviço existem
 info "Verificando arquivos necessários..."
-REQUIRED_FILES=("services/documents_service.py" "services/deadlines_service.py" "services/hearings_service.py" "gateway/app.py")
+REQUIRED_FILES=("services/documents/app.py" "services/deadlines/app.py" "services/hearings/app.py" "services/auth/app.py" "services/processes/app.py" "gateway/app.py")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "$file" ]; then
         error "Arquivo necessário não encontrado: $file"
@@ -303,7 +303,7 @@ check_port() {
     fi
 }
 
-PORTS=(5001 5002 5003 8000)
+PORTS=(5001 5002 5003 5004 5005 8000)
 BUSY_PORTS=()
 
 for port in "${PORTS[@]}"; do
@@ -354,15 +354,23 @@ trap cleanup INT TERM EXIT
 log "Iniciando serviços..."
 
 log "Iniciando Serviço de Documentos (porta 5001)..."
-( python services/documents_service.py ) & DOCS_PID=$!
+( python -m services.documents.app ) & DOCS_PID=$!
 sleep 1
 
 log "Iniciando Serviço de Prazos (porta 5002)..."
-( python services/deadlines_service.py ) & DEAD_PID=$!
+( python -m services.deadlines.app ) & DEAD_PID=$!
 sleep 1
 
 log "Iniciando Serviço de Audiências (porta 5003)..."
-( python services/hearings_service.py ) & HEAR_PID=$!
+( python -m services.hearings.app ) & HEAR_PID=$!
+sleep 1
+
+log "Iniciando Serviço de Autenticação (porta 5004)..."
+( python -m services.auth.app ) & AUTH_PID=$!
+sleep 1
+
+log "Iniciando Serviço de Processos (porta 5005)..."
+( python -m services.processes.app ) & PROC_PID=$!
 sleep 1
 
 log "Iniciando API Gateway (porta 8000)..."
@@ -428,7 +436,7 @@ fi
 
 # Verificar serviços (com timeout)
 SERVICES_OK=true
-check_service "http://127.0.0.1:8000/health" "API Gateway" || SERVICES_OK=false
+check_service "http://127.0.0.1:8000/health?fast=1" "API Gateway" || SERVICES_OK=false
 
 if [ "$SERVICES_OK" = true ]; then
     echo
@@ -440,6 +448,8 @@ if [ "$SERVICES_OK" = true ]; then
     info "  • Documentos:  $DOCS_PID (porta 5001)"
     info "  • Prazos:      $DEAD_PID (porta 5002)"
     info "  • Audiências:  $HEAR_PID (porta 5003)"
+    info "  • Autenticação:$AUTH_PID (porta 5004)"
+    info "  • Processos:   $PROC_PID (porta 5005)"
     info "  • API Gateway: $GATE_PID (porta 8000)"
     echo
     log "URLs de acesso:"

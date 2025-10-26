@@ -62,6 +62,20 @@ class HearingSchema(Schema):
     courtroom = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
     description = fields.Str(missing="")
 
+class RegisterSchema(Schema):
+    """Schema para validação de registro de usuário"""
+    username = fields.Str(required=True, validate=lambda x: len(x) >= 3)
+    password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
+    roles = fields.List(fields.Str(), missing=["user"])
+    permissions = fields.List(fields.Str(), missing=["read"])
+
+class ProcessSchema(Schema):
+    """Schema para processos"""
+    number = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    title = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    description = fields.Str(missing="")
+    status = fields.Str(missing="open")
+
 def hash_password(password: str) -> str:
     """Gera hash da senha usando SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
