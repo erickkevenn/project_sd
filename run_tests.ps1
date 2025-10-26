@@ -8,9 +8,9 @@ $pythonCmd = "python"
 if (Get-Command py -ErrorAction SilentlyContinue) { $pythonCmd = "py" }
 
 if ($Watch) {
-    & $pythonCmd -m pytest -q --maxfail=1 --disable-warnings --color=yes --testmon
+    & $pythonCmd -m pytest -v -s --maxfail=1 --disable-warnings --color=yes --testmon
 } else {
-    & $pythonCmd -m pytest -q --maxfail=1 --disable-warnings --color=yes
+    & $pythonCmd -m pytest -v -s --maxfail=1 --disable-warnings --color=yes
 }
 
 if ($LASTEXITCODE -eq 0) {
@@ -18,5 +18,6 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Host "[tests] Falhas detectadas" -ForegroundColor Red
 }
+
 
 

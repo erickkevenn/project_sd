@@ -4,5 +4,41 @@
     "process_id": "ORCH-01",
     "due_date": "2025-11-25",
     "description": "Prazo para resposta - criado via orquestração"
+  },
+  {
+    "id": "01874d72",
+    "process_id": "T-01",
+    "due_date": "2025-10-26",
+    "description": ""
+  },
+  {
+    "id": "bb89ef81",
+    "process_id": "0001",
+    "due_date": "2025-10-12",
+    "description": ""
+  },
+  {
+    "id": "8ff3db74",
+    "process_id": "T-01",
+    "due_date": "2025-10-26",
+    "description": ""
+  },
+  {
+    "id": "bd5e52d5",
+    "process_id": "0001",
+    "due_date": "2025-10-12",
+    "description": ""
+  },
+  {
+    "id": "aa40b7f4",
+    "process_id": "T-01",
+    "due_date": "2025-10-26",
+    "description": ""
+  },
+  {
+    "id": "b395addc",
+    "process_id": "0001",
+    "due_date": "2025-10-12",
+    "description": ""
   }
 ]

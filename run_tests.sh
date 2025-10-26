@@ -9,8 +9,9 @@ else
   PY=python3
 fi
 
-$PY -m pytest -q --maxfail=1 --disable-warnings --color=yes
+$PY -m pytest -v -s --maxfail=1 --disable-warnings --color=yes
 
-echo "[tests] Sucesso"
+echo "[tests] Suite finalizada"
+
 
 

@@ -5,5 +5,47 @@
     "date": "2025-11-10",
     "courtroom": "Sala 3",
     "description": "Audiência inicial - criada via orquestração"
+  },
+  {
+    "id": "e1d4400c",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "2694b7ac",
+    "process_id": "0001",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "06b9993a",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "8d500f51",
+    "process_id": "0001",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "161f99fc",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "08372ee1",
+    "process_id": "0001",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
   }
 ]
