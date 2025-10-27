@@ -67,7 +67,7 @@ class RegisterSchema(Schema):
     username = fields.Str(required=True, validate=lambda x: len(x) >= 3)
     password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
     roles = fields.List(fields.Str(), missing=["user"])
-    permissions = fields.List(fields.Str(), missing=["read"])
+    permissions = fields.List(fields.Str(), missing=["read", "write"])
 
 class ProcessSchema(Schema):
     """Schema para processos"""
@@ -84,12 +84,13 @@ def verify_password(password: str, password_hash: str) -> bool:
     """Verifica se a senha corresponde ao hash"""
     return hash_password(password) == password_hash
 
-def generate_token(username: str, roles: List[str], permissions: List[str]) -> str:
+def generate_token(username: str, roles: List[str], permissions: List[str], office_id: Optional[str] = None) -> str:
     """Gera token JWT"""
     payload = {
         'username': username,
         'roles': roles,
         'permissions': permissions,
+        'office_id': office_id,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=JWT_EXPIRATION_HOURS),
         'iat': datetime.datetime.utcnow(),
         'jti': secrets.token_hex(16)  # JWT ID único

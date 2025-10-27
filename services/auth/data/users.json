@@ -11,7 +11,8 @@
       "write",
       "delete",
       "orchestrate"
-    ]
+    ],
+    "office_id": "e91eff737ca2"
   },
   "lawyer": {
     "password_hash": "ac3226b60081e5f9f9f1f784838aca038eb7c2f7411cb90702b6c2bfe07a45a9",
@@ -23,7 +24,8 @@
       "read",
       "write",
       "orchestrate"
-    ]
+    ],
+    "office_id": "2d391e7ad9a7"
   },
   "intern": {
     "password_hash": "534d9b45e4168ad5e7ab39ddde0387982ec6a2a18b992f62738b23fcde72f7e7",
@@ -32,6 +34,20 @@
     ],
     "permissions": [
       "read"
-    ]
+    ],
+    "office_id": "57b3475220a1"
+  },
+  "well": {
+    "password_hash": "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225",
+    "roles": [
+      "lawyer",
+      "user"
+    ],
+    "permissions": [
+      "read",
+      "write",
+      "orchestrate"
+    ],
+    "office_id": "24ec9a22f22b"
   }
 }

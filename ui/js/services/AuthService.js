@@ -61,18 +61,33 @@ class AuthService {
 
     try {
       this.showStatus(statusElement, 'Cadastrando...', 'loading');
-      
-      // Simulate registration (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
+      // Monta payload para criação de usuário
+      const payload = {
+        username: formData.username,
+        password: formData.password
+      };
+
+      // Usuário criado via "Cadastrar Escritório" será o admin inicial do escritório
+      payload.roles = ['admin', 'lawyer', 'user'];
+      payload.permissions = ['read', 'write', 'delete', 'orchestrate'];
+
+      const resp = await this.api.post('/api/auth/register', payload);
+
+      if (!resp.ok) {
+        this.api.handleError(resp, 'Cadastro');
+        return;
+      }
+
       this.showStatus(statusElement, 'Cadastro realizado com sucesso! Redirecionando...', 'success');
-      
+
       setTimeout(() => {
         this.app.navigateTo('login');
-        document.getElementById('username').value = formData.username;
+        const userInput = document.getElementById('username');
+        if (userInput) userInput.value = formData.username;
         this.showStatus(document.getElementById('loginStatus'), 'Cadastro concluído! Faça login com suas credenciais.', 'success');
-      }, 2000);
-      
+      }, 800);
+
     } catch (error) {
       this.showStatus(statusElement, error.message, 'error');
     }

@@ -190,7 +190,12 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             user_info = auth_resp.get("user", {"roles": [], "permissions": []})
 
             # Gera token JWT localmente (gateway emite JWT)
-            token = generate_token(username, user_info.get('roles', []), user_info.get('permissions', []))
+            token = generate_token(
+                username,
+                user_info.get('roles', []),
+                user_info.get('permissions', []),
+                user_info.get('office_id')
+            )
             
             log_security_event("LOGIN_SUCCESS", f"Successful login for {username} from {request.remote_addr}")
             
@@ -199,7 +204,8 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
                 "user": {
                     "username": username,
                     "roles": user_info.get('roles', []),
-                    "permissions": user_info.get('permissions', [])
+                    "permissions": user_info.get('permissions', []),
+                    "office_id": user_info.get('office_id')
                 }
             }), 200
             

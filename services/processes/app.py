@@ -55,7 +55,7 @@ def create_app() -> Flask:
     store = JsonStore(store_file, default={})
     PROCESSES: Dict[str, Any] = store.load()
 
-    import uuid
+    import uuid, datetime
 
     @app.get("/")
     def root_index():
@@ -87,6 +87,8 @@ def create_app() -> Flask:
             "title": str(data.get("title")),
             "description": str(data.get("description", "")),
             "status": str(data.get("status", "open")),
+            "created_at": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat(),
+            "updated_at": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat(),
         }
         PROCESSES[proc_id] = item
         store.save(PROCESSES)
@@ -108,6 +110,7 @@ def create_app() -> Flask:
         for field in ["number", "title", "description", "status"]:
             if field in data:
                 item[field] = str(data[field])
+        item["updated_at"] = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat()
         PROCESSES[proc_id] = item
         store.save(PROCESSES)
         return jsonify(item), 200

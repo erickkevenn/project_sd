@@ -75,12 +75,18 @@ class DocumentsService(BaseService):
             self.log_request("LIST_DOCUMENTS", f"Total: {len(self.data_store)}")
 
             process_id = request.args.get("process_id")
+            office_id = request.headers.get("X-Office-ID")
             if process_id:
                 filtered_docs = [
                     doc for doc in self.data_store.values()
-                    if doc.get("process_id") == process_id
+                    if doc.get("process_id") == process_id and (not office_id or doc.get("office_id") == office_id)
                 ]
                 return self.create_success_response(filtered_docs)
+
+            if office_id:
+                return self.create_success_response([
+                    d for d in self.data_store.values() if d.get("office_id") == office_id
+                ])
 
             return self.create_success_response(list(self.data_store.values()))
 
@@ -95,6 +101,7 @@ class DocumentsService(BaseService):
                     return self.create_error_response(error, 400)
 
                 doc_id = self.generate_id()
+                office_id = request.headers.get("X-Office-ID")
                 document = {
                     "id": doc_id,
                     "title": self.sanitize_string(data["title"]),
@@ -103,6 +110,7 @@ class DocumentsService(BaseService):
                     "process_id": data.get("process_id"),
                     "created_at": self._get_current_timestamp(),
                     "updated_at": self._get_current_timestamp(),
+                    "office_id": office_id,
                 }
 
                 self.data_store[doc_id] = document
@@ -122,7 +130,11 @@ class DocumentsService(BaseService):
             if doc_id not in self.data_store:
                 return self.create_error_response("Document not found", 404)
 
-            return self.create_success_response(self.data_store[doc_id])
+            office_id = request.headers.get("X-Office-ID")
+            doc = self.data_store[doc_id]
+            if office_id and doc.get("office_id") != office_id:
+                return self.create_error_response("Document not found", 404)
+            return self.create_success_response(doc)
 
         @self.app.put("/documents/<doc_id>")
         def update_document(doc_id: str):
@@ -165,8 +177,8 @@ class DocumentsService(BaseService):
             })
 
     def _get_current_timestamp(self) -> str:
-        from datetime import datetime
-        return datetime.utcnow().isoformat()
+        from datetime import datetime, timezone, timedelta
+        return datetime.now(timezone(timedelta(hours=-3))).isoformat()
 
 
 # Instância do serviço

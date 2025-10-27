@@ -73,12 +73,15 @@ def create_app() -> Flask:
     @app.post("/hearings")
     def create_hearing():
         data = request.get_json(force=True)
+        office_id = request.headers.get("X-Office-ID")
         item = {
             "id": str(uuid.uuid4())[:8],
             "process_id": data.get("process_id", ""),
             "date": data.get("date", ""),
             "courtroom": data.get("courtroom", "Sala 1"),
             "description": data.get("description", ""),
+            "created_at": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat(),
+            "office_id": office_id,
         }
         HEARINGS.append(item)
         store.save(HEARINGS)
@@ -87,9 +90,12 @@ def create_app() -> Flask:
     @app.get("/hearings")
     def list_hearings():
         date = request.args.get("date")
+        office_id = request.headers.get("X-Office-ID")
         items = HEARINGS
         if date:
             items = [h for h in HEARINGS if h.get("date") == date]
+        if office_id:
+            items = [h for h in items if h.get("office_id") == office_id]
         return jsonify({"items": items}), 200
 
     @app.get("/hearings/today")

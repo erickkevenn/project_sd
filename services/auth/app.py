@@ -70,19 +70,37 @@ def create_app() -> Flask:
                 "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",  # admin123
                 "roles": ["admin", "lawyer", "user"],
                 "permissions": ["read", "write", "delete", "orchestrate"],
+                "office_id": "office-admin",
             },
             "lawyer": {
                 "password_hash": "ac3226b60081e5f9f9f1f784838aca038eb7c2f7411cb90702b6c2bfe07a45a9",  # lawyer123
                 "roles": ["lawyer", "user"],
                 "permissions": ["read", "write", "orchestrate"],
+                "office_id": "office-lawyer",
             },
             "intern": {
                 "password_hash": "534d9b45e4168ad5e7ab39ddde0387982ec6a2a18b992f62738b23fcde72f7e7",  # intern123
                 "roles": ["user"],
                 "permissions": ["read"],
+                "office_id": "office-intern",
             },
         }
         store.save(USERS)
+
+    # Normalização: garante office_id para todos os usuários existentes
+    try:
+        import uuid as _uuid
+        changed = False
+        for _u, _data in list(USERS.items()):
+            if not isinstance(_data, dict):
+                continue
+            if not _data.get("office_id"):
+                _data["office_id"] = _uuid.uuid4().hex[:12]
+                changed = True
+        if changed:
+            store.save(USERS)
+    except Exception:
+        pass
 
     @app.get("/")
     def root_index():
@@ -102,7 +120,12 @@ def create_app() -> Flask:
         username = str(data.get("username", "")).strip()
         password = str(data.get("password", ""))
         roles = data.get("roles") or ["user"]
-        permissions = data.get("permissions") or ["read"]
+        # Por padrão, conceder read+write para permitir uso imediato da API
+        permissions = data.get("permissions") or ["read", "write"]
+
+        # Gera um office_id para o novo escritório (multi-tenant)
+        import uuid as _uuid
+        office_id = data.get("office_id") or _uuid.uuid4().hex[:12]
 
         if len(username) < 3 or len(password) < 6:
             return jsonify({"error": "Invalid username or password"}), 400
@@ -114,6 +137,7 @@ def create_app() -> Flask:
             "password_hash": hash_password(password),
             "roles": roles,
             "permissions": permissions,
+            "office_id": office_id,
         }
         store.save(USERS)
 
@@ -122,6 +146,7 @@ def create_app() -> Flask:
                 "username": username,
                 "roles": roles,
                 "permissions": permissions,
+                "office_id": office_id,
             }
         }), 201
 
@@ -138,11 +163,19 @@ def create_app() -> Flask:
         if user.get("password_hash") != hash_password(password):
             return jsonify({"error": "Invalid credentials"}), 401
 
+        # Garante office_id para contas antigas
+        if not user.get("office_id"):
+            import uuid as _uuid
+            user["office_id"] = _uuid.uuid4().hex[:12]
+            USERS[username] = user
+            store.save(USERS)
+
         return jsonify({
             "user": {
                 "username": username,
                 "roles": user.get("roles", []),
                 "permissions": user.get("permissions", []),
+                "office_id": user.get("office_id"),
             }
         }), 200
 

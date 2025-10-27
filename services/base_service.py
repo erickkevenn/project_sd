@@ -8,7 +8,7 @@ import logging
 import os
 from typing import Dict, Any, Optional
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 class BaseService:
     """Classe base para microserviços"""
@@ -51,7 +51,7 @@ class BaseService:
                 "status": "ok",
                 "service": self.service_name,
                 "count": len(self.data_store),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone(timedelta(hours=-3))).isoformat()
             }, 200
     
     def generate_id(self) -> str:
@@ -80,14 +80,14 @@ class BaseService:
         return jsonify({
             "error": message,
             "service": self.service_name,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone(timedelta(hours=-3))).isoformat()
         }), status_code
     
     def create_success_response(self, data: Any, status_code: int = 200) -> tuple:
         """Cria resposta de sucesso padronizada"""
         if isinstance(data, dict):
             data["service"] = self.service_name
-            data["timestamp"] = datetime.utcnow().isoformat()
+            data["timestamp"] = datetime.now(timezone(timedelta(hours=-3))).isoformat()
         
         return jsonify(data), status_code
     

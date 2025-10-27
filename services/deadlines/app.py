@@ -71,16 +71,22 @@ def create_app() -> Flask:
 
     @app.get("/deadlines")
     def list_deadlines():
+        office_id = request.headers.get("X-Office-ID")
+        if office_id:
+            return jsonify([d for d in DEADLINES if d.get("office_id") == office_id]), 200
         return jsonify(DEADLINES), 200
 
     @app.post("/deadlines")
     def create_deadline():
         data = request.get_json(force=True)
+        office_id = request.headers.get("X-Office-ID")
         item = {
             "id": str(uuid.uuid4())[:8],
             "process_id": data.get("process_id", ""),
             "due_date": data.get("due_date", ""),
             "description": data.get("description", ""),
+            "created_at": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat(),
+            "office_id": office_id,
         }
         DEADLINES.append(item)
         store.save(DEADLINES)
@@ -89,7 +95,8 @@ def create_app() -> Flask:
     @app.get("/deadlines/today")
     def deadlines_today():
         today = datetime.date.today().isoformat()
-        todays = [d for d in DEADLINES if d.get("due_date") == today]
+        office_id = request.headers.get("X-Office-ID")
+        todays = [d for d in DEADLINES if d.get("due_date") == today and (not office_id or d.get("office_id") == office_id)]
         return jsonify({"date": today, "items": todays}), 200
 
     @app.delete("/deadlines/<deadline_id>")
