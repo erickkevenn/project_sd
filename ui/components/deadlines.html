@@ -11,14 +11,20 @@
     <link rel="stylesheet" href="../css/pages.css">
     <link rel="stylesheet" href="../css/process.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Load utilities first -->
+    <script src="../js/utils.js"></script>
     <script src="../js/modals.js" defer></script>
     <!-- Header Placeholder -->
-    <div id="header-placeholder"></div>
+    
+    
+    
 
 </head>
 
 
+
 <body>
+    <div id="header-placeholder"></div>
 
     <div class="process-container">
         <!-- Page Header -->
@@ -32,20 +38,14 @@
                     <i class="fas fa-sync-alt"></i>
                     Atualizar Lista
                 </button>
-                <button onclick="createDeadlineModal()" class="btn btn--secondary">
-                    <i class="fas fa-plus"></i>
-                    Criar Novo Prazo
-                </button>
-                <button onclick="filterTodayDeadlines()" class="btn btn--primary">
-                    <i class="fas fa-calendar-day"></i>
-                    Prazos de Hoje
-                </button>
+                <!-- 'Criar Novo Prazo' removed from page header per request -->
             </div>
         </div>
 
-        <!-- Search Bar -->
+        <!-- Search Label + Bar -->
+        <div class="search-label">Buscar prazos</div>
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input"
+            <input type="text" id="searchInput" class="search-input search-input--small"
                 placeholder="Digite o ID do processo ou descrição para filtrar..." onkeyup="filterDeadlines()">
         </div>
 
@@ -176,7 +176,7 @@
                         <tbody>`;
 
             sortedDeadlines.forEach(deadline => {
-                const dueDate = deadline.due_date ? formatDate(deadline.due_date) : 'N/A';
+                const dueDate = deadline.due_date ? formatDate(deadline.due_date, false) : 'N/A';
                 const status = getDeadlineStatus(deadline.due_date);
                 const statusClass = status.class;
                 const statusText = status.text;
@@ -259,7 +259,7 @@
             
             idInput.value = deadlineId;
             
-            const formattedDate = dueDate ? formatDate(dueDate) : 'N/A';
+            const formattedDate = dueDate ? formatDate(dueDate, false) : 'N/A';
             
             infoDiv.innerHTML = `
                 <div style="display: grid; gap: 0.5rem;">
@@ -302,32 +302,7 @@
             }
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return 'N/A';
-            try {
-                const date = new Date(dateString);
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                
-                // Check if time is included
-                if (dateString.includes('T') || dateString.includes(':')) {
-                    const hours = String(date.getHours()).padStart(2, '0');
-                    const minutes = String(date.getMinutes()).padStart(2, '0');
-                    return `${day}/${month}/${year} ${hours}:${minutes}`;
-                }
-                
-                return `${day}/${month}/${year}`;
-            } catch (e) {
-                return dateString;
-            }
-        }
+        // Using escapeHtml and formatDate from utils.js
     </script>
 
     <style>
@@ -369,7 +344,16 @@
         .col-date {
             font-family: 'Courier New', monospace;
         }
+        
+        .warning-text {
+            color: #fbbf24;
+            font-weight: 600;
+            text-align: center;
+            margin: 1rem 0;
+        }
+    </style>
 
+    <script>
         // Global function for back to home button
         window.goToMainScreen = function() {
             window.location.href = '/ui';
@@ -385,73 +369,73 @@
             }
         };
     </script>
+    <script>
+        async function loadHeader() {
+            try {
+                const response = await fetch('header.html');
+                const html = await response.text();
+                document.getElementById('header-placeholder').innerHTML = html;
+                
+                // Show the back home button since we're in a standalone page
+                const btnBackHome = document.getElementById('btnBackHome');
+                if (btnBackHome) {
+                    // Use requestAnimationFrame for smoother display
+                    requestAnimationFrame(() => {
+                        btnBackHome.style.display = 'inline-flex';
+                    });
+                }
+                
+                // Update username after header loads
+                await updateUserInfo();
+            } catch (error) {
+                console.error('Error loading header:', error);
+            }
+        }
+        
+        /**
+         * Update user info in header
+         */
+        async function updateUserInfo() {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) return;
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const userNameBox = document.getElementById('userName');
+                    const officeNameBox = document.getElementById('officeName');
+                    
+                    if (userNameBox && data.user && data.user.username) {
+                        userNameBox.textContent = data.user.username;
+                    }
+                    
+                    if (officeNameBox && data.user && data.user.office) {
+                        officeNameBox.textContent = data.user.office;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadHeader();
+
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                alert('Você precisa estar autenticado para acessar esta página.');
+                window.location.href = '/ui';
+                return;
+            }
+            loadAllDeadlines();
+        });
+    </script>
 </body>
 </html>
-<script>
-    async function loadHeader() {
-        try {
-            const response = await fetch('header.html');
-            const html = await response.text();
-            document.getElementById('header-placeholder').innerHTML = html;
-            
-            // Show the back home button since we're in a standalone page
-            const btnBackHome = document.getElementById('btnBackHome');
-            if (btnBackHome) {
-                // Use requestAnimationFrame for smoother display
-                requestAnimationFrame(() => {
-                    btnBackHome.style.display = 'inline-flex';
-                });
-            }
-            
-            // Update username after header loads
-            await updateUserInfo();
-        } catch (error) {
-            console.error('Error loading header:', error);
-        }
-    }
-    
-    /**
-     * Update user info in header
-     */
-    async function updateUserInfo() {
-        const token = localStorage.getItem('jwtToken');
-        if (!token) return;
-        
-        try {
-            const response = await fetch('/api/auth/me', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const userNameBox = document.getElementById('userName');
-                const officeNameBox = document.getElementById('officeName');
-                
-                if (userNameBox && data.user && data.user.username) {
-                    userNameBox.textContent = data.user.username;
-                }
-                
-                if (officeNameBox && data.user && data.user.office) {
-                    officeNameBox.textContent = data.user.office;
-                }
-            }
-        } catch (error) {
-            console.error('Error loading user info:', error);
-        }
-    }
-    
-    document.addEventListener('DOMContentLoaded', async function () {
-        await loadHeader();
-
-        const token = localStorage.getItem('jwtToken');
-        if (!token) {
-            alert('Você precisa estar autenticado para acessar esta página.');
-            window.location.href = '/ui';
-            return;
-        }
-        loadAllDeadlines();
-    });
-</script>

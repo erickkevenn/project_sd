@@ -32,10 +32,6 @@
                     <i class="fas fa-sync-alt"></i>
                     Atualizar Lista
                 </button>
-                <button onclick="showSearchModal()" class="btn btn--secondary">
-                    <i class="fas fa-search"></i>
-                    Buscar Processo
-                </button>
                 <button onclick="orchestrateCase()" class="btn btn--primary">
                     <i class="fas fa-magic"></i>
                     Orquestrar Caso
@@ -43,9 +39,10 @@
             </div>
         </div>
 
-        <!-- Search Bar -->
+        <!-- Search Label + Bar -->
+        <div class="search-label">Buscar processos</div>
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input"
+            <input type="text" id="searchInput" class="search-input search-input--small"
                 placeholder="Digite o ID ou nome do processo para filtrar..." onkeyup="filterProcesses()">
         </div>
 
@@ -89,6 +86,20 @@
         </div>
     </div>
 
+    <!-- Delete Process Modal -->
+    <div id="deleteProcessModal" class="modal" onclick="closeDeleteProcessModal()">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🗑️ Excluir Processo</div>
+            <div class="info-text">Tem certeza que deseja excluir este processo?</div>
+            <input type="hidden" id="deleteProcessIdInput" />
+            <div id="deleteProcessInfo" style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px;"></div>
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeDeleteProcessModal()">Cancelar</button>
+                <button class="modal__button modal__button--danger" onclick="confirmDeleteProcess()">Excluir Processo</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Constants
         const API_BASE_URL = window.location.protocol + '//' + window.location.host;
@@ -122,12 +133,12 @@
             container.innerHTML = '<div class="status-loading"><div><i class="fas fa-circle-notch"></i></div><div>Carregando processos...</div></div>';
 
             try {
-                // Get data from all services to find unique process IDs
-                const [docsRes, deadlinesRes, hearingsRes] = await Promise.all([
-                    apiRequest('/api/documents'),
-                    apiRequest('/api/deadlines'),
-                    apiRequest('/api/hearings')
-                ]);
+                    // Get data from all services to find unique process IDs
+                    const [docsRes, deadlinesRes, hearingsRes] = await Promise.all([
+                        apiRequest('/api/documents'),
+                        apiRequest('/api/deadlines'),
+                        apiRequest('/api/hearings')
+                    ]);
 
                 const processMap = new Map();
 
@@ -200,6 +211,33 @@
 
                 allProcesses = Array.from(processMap.values());
 
+                // Also include explicit processes returned by the /api/processes endpoint
+                try {
+                    const processesRes = await apiRequest('/api/processes');
+                    if (processesRes.ok && Array.isArray(processesRes.data)) {
+                        processesRes.data.forEach(p => {
+                            const id = p.number || p.id || p.process_id;
+                            if (!id) return;
+                            if (!processMap.has(id)) {
+                                processMap.set(id, {
+                                    id,
+                                    api_id: p.id || null,
+                                    name: p.title || p.name || `Processo ${id}`,
+                                    created_at: p.created_at || null
+                                });
+                            } else {
+                                // if already present, ensure we attach api_id when available
+                                const existing = processMap.get(id);
+                                if (!existing.api_id && p.id) existing.api_id = p.id;
+                            }
+                        });
+
+                        allProcesses = Array.from(processMap.values());
+                    }
+                } catch (e) {
+                    console.warn('Could not fetch /api/processes:', e);
+                }
+
                 renderProcessTable(allProcesses);
             } catch (error) {
                 console.error('Error loading processes:', error);
@@ -222,6 +260,8 @@
 
             processes.forEach(process => {
                 const createdDate = process.created_at ? formatDate(process.created_at) : '<span style="color: #94a3b8;">Data não disponível</span>';
+                // use api_id for deletion if available (backend may expect internal id), but display the public id
+                const deleteTarget = process.api_id || process.id;
                 html += `<tr>
                     <td><strong>${escapeHtml(process.id)}</strong></td>
                     <td>${escapeHtml(process.name)}</td>
@@ -229,6 +269,9 @@
                     <td>
                         <button onclick="viewProcessDetails('${escapeHtml(process.id)}')" class="btn btn--secondary" style="padding: 0.5rem 1rem;">
                             <i class="fas fa-eye"></i> Ver Detalhes
+                        </button>
+                        <button onclick="deleteProcessConfirm('${escapeHtml(deleteTarget)}','${escapeHtml(process.id)}')" class="btn btn--danger" style="padding: 0.5rem 1rem; margin-left:0.5rem;">
+                            <i class="fas fa-trash"></i> Excluir
                         </button>
                     </td>
                 </tr>`;
@@ -294,6 +337,72 @@
         function closeDetailsModal() {
             const modal = document.getElementById('processDetailsModal');
             modal.style.display = 'none';
+        }
+
+        // Delete process confirmation flow
+        function deleteProcessConfirm(apiId, displayId) {
+            const modal = document.getElementById('deleteProcessModal');
+            const idInput = document.getElementById('deleteProcessIdInput');
+            const infoDiv = document.getElementById('deleteProcessInfo');
+
+            // store the API id (internal identifier) for deletion; if apiId is null, fallback to displayId
+            idInput.value = apiId || displayId;
+            infoDiv.innerHTML = `<div><strong>ID público:</strong> ${escapeHtml(displayId)}</div><div style="margin-top: 0.5rem; color: #94a3b8;"><small>(usando identificador interno: ${escapeHtml(apiId || displayId)})</small></div>`;
+            modal.style.display = 'flex';
+        }
+
+        function closeDeleteProcessModal() {
+            const modal = document.getElementById('deleteProcessModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function confirmDeleteProcess() {
+            const id = document.getElementById('deleteProcessIdInput')?.value;
+            if (!id) {
+                alert('ID do processo não encontrado.');
+                return;
+            }
+
+            closeDeleteProcessModal();
+
+            try {
+                let response = await apiRequest(`/api/processes/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Processo excluído com sucesso.');
+                    loadAllProcesses();
+                    return;
+                }
+
+                // If not found, try to resolve by searching /api/processes for a matching number and retry
+                const status = response.status;
+                const msg = (response.data && (response.data.error || response.data.message)) || 'Erro desconhecido';
+
+                if (status === 404) {
+                    // attempt to find a process with number equal to the id we tried
+                    const listResp = await apiRequest('/api/processes');
+                    if (listResp.ok && Array.isArray(listResp.data)) {
+                        const candidate = listResp.data.find(p => (p.id === id) || (p.number === id) || (p.process_id === id));
+                        if (candidate && (candidate.id && candidate.id !== id)) {
+                            // retry delete using the canonical internal id
+                            const retryResp = await apiRequest(`/api/processes/${encodeURIComponent(candidate.id)}`, { method: 'DELETE' });
+                            if (retryResp.ok) {
+                                alert('Processo excluído com sucesso (identificador interno).');
+                                loadAllProcesses();
+                                return;
+                            } else {
+                                alert(`Erro ao excluir processo após resolver identificador: ${retryResp.data?.error || retryResp.data?.message || 'Erro desconhecido'}`);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // fallback: show original message
+                alert(`Erro ao excluir processo: ${msg}`);
+            } catch (e) {
+                console.error('Error deleting process:', e);
+                alert('Erro ao excluir processo.');
+            }
         }
 
         // Show search modal
@@ -393,6 +502,10 @@
             
             document.getElementById('processDetailsModal')?.addEventListener('click', function (e) {
                 if (e.target === this) closeDetailsModal();
+            });
+            
+            document.getElementById('deleteProcessModal')?.addEventListener('click', function (e) {
+                if (e.target === this) closeDeleteProcessModal();
             });
         }
 

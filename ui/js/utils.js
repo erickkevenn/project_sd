@@ -126,41 +126,34 @@ function renderProcessSummary(processId, data) {
  * @returns {string} HTML string
  */
 function renderDocumentsSection(documents) {
+  // Render documents as a datatable for compact display inside modal
   let html = '<div class="details-section">';
   html += '<h3 class="section-title"><i class="fas fa-file-alt"></i> Documentos</h3>';
-  html += '<div class="details-grid">';
-  
+  if (!documents || documents.length === 0) {
+    html += '<div class="empty-state__text">Nenhum documento encontrado.</div>';
+    html += '</div>';
+    return html;
+  }
+
+  html += '<div class="data-table-container" style="margin-top: 1rem;">';
+  html += '<table class="data-table">';
+  html += '<thead><tr><th>#</th><th>ID</th><th>Título</th><th>Autor</th><th>Criado em</th><th>Conteúdo</th></tr></thead>';
+  html += '<tbody>';
+
   documents.forEach((doc, index) => {
-    html += `
-      <div class="detail-card">
-        <div class="detail-card-header">
-          <span class="detail-card-number">#${index + 1}</span>
-          <span class="detail-card-id">${escapeHtml(doc.id || 'N/A')}</span>
-        </div>
-        <div class="detail-card-body">
-          <div class="detail-row">
-            <span class="detail-label">Título:</span>
-            <span class="detail-value">${escapeHtml(doc.title || 'N/A')}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Autor:</span>
-            <span class="detail-value">${escapeHtml(doc.author || 'N/A')}</span>
-          </div>
-          ${doc.created_at ? `
-          <div class="detail-row">
-            <span class="detail-label">Criado em:</span>
-            <span class="detail-value col-date">${formatDate(doc.created_at)}</span>
-          </div>` : ''}
-          ${doc.content ? `
-          <div class="detail-row detail-row-full">
-            <span class="detail-label">Conteúdo:</span>
-            <span class="detail-value detail-content">${escapeHtml(doc.content)}</span>
-          </div>` : ''}
-        </div>
-      </div>`;
+    const created = doc.created_at ? formatDate(doc.created_at) : '';
+    const content = doc.content ? escapeHtml(doc.content) : '';
+    html += `<tr>`;
+    html += `<td>${index + 1}</td>`;
+    html += `<td><code>${escapeHtml(doc.id || '')}</code></td>`;
+    html += `<td>${escapeHtml(doc.title || '')}</td>`;
+    html += `<td>${escapeHtml(doc.author || '')}</td>`;
+    html += `<td class="col-date">${created}</td>`;
+    html += `<td>${content}</td>`;
+    html += `</tr>`;
   });
-  
-  html += '</div></div>';
+
+  html += '</tbody></table></div></div>';
   return html;
 }
 
@@ -170,41 +163,33 @@ function renderDocumentsSection(documents) {
  * @returns {string} HTML string
  */
 function renderDeadlinesSection(deadlines) {
+  // Render deadlines as a datatable
   let html = '<div class="details-section">';
   html += '<h3 class="section-title"><i class="fas fa-clock"></i> Prazos</h3>';
-  html += '<div class="details-grid">';
-  
+  if (!deadlines || deadlines.length === 0) {
+    html += '<div class="empty-state__text">Nenhum prazo encontrado.</div>';
+    html += '</div>';
+    return html;
+  }
+
+  html += '<div class="data-table-container" style="margin-top: 1rem;">';
+  html += '<table class="data-table">';
+  html += '<thead><tr><th>#</th><th>ID do Processo</th><th>Vencimento</th><th>Criado em</th><th>Descrição</th></tr></thead>';
+  html += '<tbody>';
+
   deadlines.forEach((deadline, index) => {
-    html += `
-      <div class="detail-card">
-        <div class="detail-card-header">
-          <span class="detail-card-number">#${index + 1}</span>
-          <span class="detail-card-id">${escapeHtml(deadline.id || 'N/A')}</span>
-        </div>
-        <div class="detail-card-body">
-          <div class="detail-row">
-            <span class="detail-label">ID do Processo:</span>
-            <span class="detail-value">${escapeHtml(deadline.process_id || 'N/A')}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Vencimento:</span>
-            <span class="detail-value col-date">${formatDate(deadline.due_date, false)}</span>
-          </div>
-          ${deadline.created_at ? `
-          <div class="detail-row">
-            <span class="detail-label">Criado em:</span>
-            <span class="detail-value col-date">${formatDate(deadline.created_at)}</span>
-          </div>` : ''}
-          ${deadline.description ? `
-          <div class="detail-row detail-row-full">
-            <span class="detail-label">Descrição:</span>
-            <span class="detail-value">${escapeHtml(deadline.description)}</span>
-          </div>` : ''}
-        </div>
-      </div>`;
+    const due = deadline.due_date ? formatDate(deadline.due_date, false) : '';
+    const created = deadline.created_at ? formatDate(deadline.created_at) : '';
+    html += `<tr>`;
+    html += `<td>${index + 1}</td>`;
+    html += `<td>${escapeHtml(deadline.process_id || '')}</td>`;
+    html += `<td class="col-date">${due}</td>`;
+    html += `<td class="col-date">${created}</td>`;
+    html += `<td>${escapeHtml(deadline.description || '')}</td>`;
+    html += `</tr>`;
   });
-  
-  html += '</div></div>';
+
+  html += '</tbody></table></div></div>';
   return html;
 }
 
@@ -214,45 +199,34 @@ function renderDeadlinesSection(deadlines) {
  * @returns {string} HTML string
  */
 function renderHearingsSection(hearings) {
+  // Render hearings as a datatable
   let html = '<div class="details-section">';
   html += '<h3 class="section-title"><i class="fas fa-gavel"></i> Audiências</h3>';
-  html += '<div class="details-grid">';
-  
+  if (!hearings || hearings.length === 0) {
+    html += '<div class="empty-state__text">Nenhuma audiência encontrada.</div>';
+    html += '</div>';
+    return html;
+  }
+
+  html += '<div class="data-table-container" style="margin-top: 1rem;">';
+  html += '<table class="data-table">';
+  html += '<thead><tr><th>#</th><th>ID do Processo</th><th>Data</th><th>Sala</th><th>Criado em</th><th>Descrição</th></tr></thead>';
+  html += '<tbody>';
+
   hearings.forEach((hearing, index) => {
-    html += `
-      <div class="detail-card">
-        <div class="detail-card-header">
-          <span class="detail-card-number">#${index + 1}</span>
-          <span class="detail-card-id">${escapeHtml(hearing.id || 'N/A')}</span>
-        </div>
-        <div class="detail-card-body">
-          <div class="detail-row">
-            <span class="detail-label">ID do Processo:</span>
-            <span class="detail-value">${escapeHtml(hearing.process_id || 'N/A')}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Data:</span>
-            <span class="detail-value col-date">${formatDate(hearing.date, false)}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Sala:</span>
-            <span class="detail-value">${escapeHtml(hearing.courtroom || 'N/A')}</span>
-          </div>
-          ${hearing.created_at ? `
-          <div class="detail-row">
-            <span class="detail-label">Criado em:</span>
-            <span class="detail-value col-date">${formatDate(hearing.created_at)}</span>
-          </div>` : ''}
-          ${hearing.description ? `
-          <div class="detail-row detail-row-full">
-            <span class="detail-label">Descrição:</span>
-            <span class="detail-value">${escapeHtml(hearing.description)}</span>
-          </div>` : ''}
-        </div>
-      </div>`;
+    const date = hearing.date ? formatDate(hearing.date, false) : '';
+    const created = hearing.created_at ? formatDate(hearing.created_at) : '';
+    html += `<tr>`;
+    html += `<td>${index + 1}</td>`;
+    html += `<td>${escapeHtml(hearing.process_id || '')}</td>`;
+    html += `<td class="col-date">${date}</td>`;
+    html += `<td>${escapeHtml(hearing.courtroom || '')}</td>`;
+    html += `<td class="col-date">${created}</td>`;
+    html += `<td>${escapeHtml(hearing.description || '')}</td>`;
+    html += `</tr>`;
   });
-  
-  html += '</div></div>';
+
+  html += '</tbody></table></div></div>';
   return html;
 }
 
@@ -342,4 +316,150 @@ if (typeof window !== 'undefined') {
     showLoadingState,
     setupModalCloseHandler
   };
+}
+
+/**
+ * Enhance rendered tables with a small pagination / page-size selector.
+ * This will add a control above any element with class `data-table-container`
+ * so the user can choose to show 5 / 10 / all rows and navigate pages.
+ */
+function enhanceDataTable(container) {
+  if (!container || container.dataset.dtEnhanced === '1') return;
+  const table = container.querySelector('table.data-table');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  if (rows.length === 0) return;
+
+  // Create top controls (selector on top-right)
+  const topControls = document.createElement('div');
+  topControls.className = 'dt-controls dt-controls-top';
+  topControls.style.display = 'flex';
+  topControls.style.justifyContent = 'flex-end';
+  topControls.style.alignItems = 'center';
+  topControls.style.margin = '0 0 0.5rem 0';
+
+  const label = document.createElement('label');
+  label.textContent = 'Mostrar:';
+  label.style.color = '#cbd5e1';
+  label.style.fontWeight = '600';
+  label.style.marginRight = '0.5rem';
+
+  const select = document.createElement('select');
+  select.innerHTML = '<option value="5">5</option><option value="10">10</option><option value="0">Todos</option>';
+  select.style.padding = '6px 8px';
+  select.style.borderRadius = '6px';
+  select.style.background = 'rgba(15, 23, 42, 0.8)';
+  select.style.color = '#e2e8f0';
+  select.style.border = '1px solid rgba(51,65,85,0.4)';
+
+  topControls.appendChild(label);
+  topControls.appendChild(select);
+  
+  // Always place the controls just above the table, inside the container
+  container.insertBefore(topControls, table);
+
+  // Create bottom controls (pagination) - align right for all tables
+  const bottomControls = document.createElement('div');
+  bottomControls.className = 'dt-controls dt-controls-bottom';
+  bottomControls.style.display = 'flex';
+  bottomControls.style.justifyContent = 'flex-end';
+  bottomControls.style.alignItems = 'center';
+  bottomControls.style.margin = '0.5rem 0 0 0';
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'btn btn--secondary btn--small';
+  prevBtn.textContent = '«';
+  prevBtn.disabled = true;
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn--secondary btn--small';
+  nextBtn.textContent = '»';
+
+  const pageInfo = document.createElement('span');
+  pageInfo.style.color = '#94a3b8';
+  pageInfo.style.fontSize = '0.95rem';
+  pageInfo.style.margin = '0 0.5rem';
+  pageInfo.textContent = '';
+
+  bottomControls.appendChild(prevBtn);
+  bottomControls.appendChild(pageInfo);
+  bottomControls.appendChild(nextBtn);
+
+  // append bottomControls after the table
+  table.insertAdjacentElement('afterend', bottomControls);
+
+  // Pagination state
+  let state = { page: 1, pageSize: 10 };
+
+  function renderPage() {
+    const ps = state.pageSize;
+    if (ps === 0) {
+      rows.forEach(r => r.style.display = 'table-row');
+      pageInfo.textContent = `1 / 1 (${rows.length} linhas)`;
+      prevBtn.disabled = true; nextBtn.disabled = true;
+      return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / ps));
+    state.page = Math.min(Math.max(1, state.page), totalPages);
+    const start = (state.page - 1) * ps;
+    const end = start + ps;
+
+    rows.forEach((r, i) => {
+      r.style.display = (i >= start && i < end) ? 'table-row' : 'none';
+    });
+
+    pageInfo.textContent = `${state.page} / ${totalPages} (${rows.length} linhas)`;
+    prevBtn.disabled = state.page <= 1;
+    nextBtn.disabled = state.page >= totalPages;
+  }
+
+  select.addEventListener('change', () => {
+    const v = parseInt(select.value, 10);
+    state.pageSize = isNaN(v) ? 10 : v;
+    state.page = 1;
+    renderPage();
+  });
+
+  prevBtn.addEventListener('click', () => { state.page = Math.max(1, state.page - 1); renderPage(); });
+  nextBtn.addEventListener('click', () => { state.page = state.page + 1; renderPage(); });
+
+  // Initialize default
+  select.value = rows.length <= 5 ? '5' : (rows.length <= 10 ? '10' : '10');
+  state.pageSize = parseInt(select.value, 10) || 10;
+  renderPage();
+
+  // mark as enhanced
+  container.dataset.dtEnhanced = '1';
+}
+
+function setupDataTableEnhancer() {
+  // Initial pass
+  document.querySelectorAll('.data-table-container').forEach(enhanceDataTable);
+
+  // Observe future inserts (pages render tables dynamically)
+  const obs = new MutationObserver(mutations => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (!(node instanceof HTMLElement)) continue;
+        if (node.matches && node.matches('.data-table-container')) {
+          enhanceDataTable(node);
+        } else {
+          node.querySelectorAll && node.querySelectorAll('.data-table-container').forEach(enhanceDataTable);
+        }
+      }
+    }
+  });
+
+  obs.observe(document.body, { childList: true, subtree: true });
+}
+
+// Auto start when DOM ready
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    try { setupDataTableEnhancer(); } catch (e) { console.warn('DataTable enhancer failed:', e); }
+  });
 }

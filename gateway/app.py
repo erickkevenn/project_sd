@@ -88,16 +88,19 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     
     # === Rotas de UI ===
     @app.route("/")
+    @limiter.exempt
     def root():
         """Redireciona para a UI"""
         return send_from_directory(UI_DIR, "index.html")
     
     @app.route("/ui")
+    @limiter.exempt
     def ui():
         """Serve a interface de usuário"""
         return send_from_directory(UI_DIR, "index.html")
     
     @app.route("/ui/<path:filename>")
+    @limiter.exempt
     def ui_static(filename):
         """Serve arquivos estáticos da UI (CSS, JS, etc.)"""
 
@@ -115,6 +118,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         return response
     
     @app.route("/favicon.ico")
+    @limiter.exempt
     def favicon():
         """Favicon vazio"""
         return "", 204

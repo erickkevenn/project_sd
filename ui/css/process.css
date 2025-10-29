@@ -9,25 +9,30 @@ body {
 }
 
 .process-container {
-    max-width: 1400px;
+    /* Constrain page width for a comfortable reading area and stay responsive */
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1.5rem;
+    box-sizing: border-box;
 }
 
 .process-header {
     background: rgba(17, 24, 39, 0.6);
     border: 1px solid rgba(51, 65, 85, 0.3);
     border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
     backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .process-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #e2e8f0;
-    margin: 0 0 1rem 0;
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -39,15 +44,17 @@ body {
 
 .process-actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
+    margin-left: auto; /* push actions to the right */
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .process-content {
     background: rgba(17, 24, 39, 0.6);
     border: 1px solid rgba(51, 65, 85, 0.3);
     border-radius: 1rem;
-    padding: 2rem;
+    padding: 1.25rem;
     backdrop-filter: blur(10px);
 }
 
@@ -59,6 +66,9 @@ body {
     overflow-x: auto;
     border-radius: 0.75rem;
     border: 1px solid rgba(51, 65, 85, 0.3);
+    padding: 0.75rem;
+    background: rgba(15, 23, 42, 0.3);
+    /* allow table to size naturally and rely on page scroll instead of inner scroll */
 }
 
 .data-table {
@@ -141,6 +151,32 @@ body {
     outline: none;
     border-color: #60a5fa;
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+/* Smaller variant for search inputs when we want a compact bar */
+.search-input--small {
+    flex: 0 0 560px; /* fixed width for a smaller bar on wide screens */
+    max-width: 560px;
+}
+
+@media (max-width: 1024px) {
+    .process-container { max-width: 920px; padding: 1rem; }
+}
+
+@media (max-width: 768px) {
+    .process-container { max-width: 100%; padding: 0.75rem; }
+    .process-header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+    .process-actions { margin-left: 0; justify-content: flex-end; }
+    .search-input--small { flex: 1 1 auto; max-width: 100%; }
+    .data-table-container { /* no inner max height on small screens */ }
+    .process-title { font-size: 1.25rem; }
+}
+
+/* Label placed above the search bar */
+.search-label {
+    color: #e2e8f0;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
 }
 
 .col-date {

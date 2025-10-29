@@ -21,6 +21,8 @@ class ProcessService {
       ]);
 
       const processIds = new Set();
+      // map of process id -> title (when available from /api/processes)
+      const processTitleMap = {};
 
       // Collect process IDs from documents
       if (docsRes.ok && Array.isArray(docsRes.data)) {
@@ -48,10 +50,29 @@ class ProcessService {
 
       const processArray = Array.from(processIds);
 
-      if (processArray.length === 0) {
+      // Also try to fetch explicit processes from the API and merge titles/ids
+      try {
+        const processesRes = await this.api.get('/api/processes');
+        if (processesRes.ok && Array.isArray(processesRes.data)) {
+          processesRes.data.forEach(p => {
+            const id = p.number || p.id || p.process_id;
+            if (id) {
+              processIds.add(id);
+              processTitleMap[id] = p.title || p.name || `Processo ${id}`;
+            }
+          });
+        }
+      } catch (e) {
+        // Non-fatal: keep previously collected ids
+        /* ignore */
+      }
+
+      const mergedArray = Array.from(processIds);
+
+      if (mergedArray.length === 0) {
         this.showDataModal('Processos', []);
       } else {
-        const processData = processArray.map(id => ({ id, name: `Processo ${id}` }));
+        const processData = mergedArray.map(id => ({ id, name: processTitleMap[id] || `Processo ${id}` }));
         this.showDataModal('Processos', processData);
       }
     } catch (error) {

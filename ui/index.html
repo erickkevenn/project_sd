@@ -105,12 +105,29 @@
   <div id="mainUI" style="display:none;" class="main-system">
     <div id="header-container"></div>
 
-    <input type="checkbox" class="checkbox-add" id="check" style="display: none;">
+  <!-- checkbox removed: using JS-driven modals instead -->
 
     <!-- Área Principal -->
     <main class="main">
       <!-- Cards de Funcionalidades -->
       <div class="features-grid">
+  <div class="card feature-card">
+          <div class="card__header">
+            <i class="card__icon fas fa-folder-open"></i>
+            <h3 class="card__title">Processos</h3>
+          </div>
+          <div class="card__actions">
+            <button data-permission="read" onclick="window.location.href='/ui/components/process.html'" class="btn btn-action">
+              <i class="fas fa-list"></i>
+              Listar Processos
+            </button>
+            <button data-permission="write" onclick="(ProcessService?.showCreateModal ? ProcessService.showCreateModal() : (window.createProcessModal && window.createProcessModal()))" class="btn btn-action">
+              <i class="fas fa-plus"></i>
+              Criar Processo
+            </button>
+          </div>
+        </div>
+
         <div class="card feature-card">
           <div class="card__header">
             <i class="card__icon fas fa-file-alt"></i>
@@ -122,11 +139,10 @@
               Gerenciar Documentos
             </a>
 
-            <label for="check" data-permission="write" onclick="" class="btn btn-action">
-
+            <button data-permission="write" onclick="(DocumentService?.showCreateModal ? DocumentService.showCreateModal() : (window.createDocumentModal && window.createDocumentModal()))" class="btn btn-action">
               <i class="fas fa-plus"></i>
               Criar Documento
-            </label>
+            </button>
           </div>
         </div>
 
@@ -136,18 +152,15 @@
             <h3 class="card__title">Prazos</h3>
           </div>
           <div class="card__actions">
-            <button data-permission="read" onclick="window.open('/ui/components/deadlines.html', '_blank')" class="btn btn-action">
+            <button data-permission="read" onclick="window.location.href='/ui/components/deadlines.html'" class="btn btn-action">
               <i class="fas fa-list"></i>
               Listar Prazos
             </button>
-            <button data-permission="write" onclick="window.open('/ui/components/deadlines.html', '_blank')" class="btn btn-action">
+            <button data-permission="write" onclick="DeadlineService?.showCreateModal ? DeadlineService.showCreateModal() : window.createDeadlineModal && window.createDeadlineModal()" class="btn btn-action">
               <i class="fas fa-plus"></i>
               Criar Prazo
             </button>
-            <button data-permission="read" onclick="window.open('/ui/components/deadlines.html', '_blank')" class="btn btn-action">
-              <i class="fas fa-calendar-day"></i>
-              Prazos de Hoje
-            </button>
+            <!-- "Prazos de Hoje" removed from dashboard as requested -->
           </div>
         </div>
 
@@ -165,45 +178,49 @@
               <i class="fas fa-plus"></i>
               Agendar Audiência
             </button>
-            <button data-permission="read" onclick="HearingService.listToday()" class="btn btn-action">
-              <i class="fas fa-calendar-day"></i>
-              Audiências de Hoje
-            </button>
-          </div>
-        </div>
-
-        <div class="card feature-card">
-          <div class="card__header">
-            <i class="card__icon fas fa-folder-open"></i>
-            <h3 class="card__title">Processos</h3>
-          </div>
-          <div class="card__actions">
-            <button data-permission="read" onclick="window.location.href='/ui/components/process.html'" class="btn btn-action">
-              <i class="fas fa-list"></i> 
-              Listar Processos
-            </button>
-            <button data-permission="read" onclick="ProcessService.showSearchModal()" class="btn btn-action">
-              <i class="fas fa-search"></i>
-              Buscar Processo
-            </button>
           </div>
         </div>
       </div>
     </main>
 
-    <label for="check" class="overlay"></label>
-
-    <section class="add-doc__form">
-      <div class="add-doc__form-container">
-        <label for="check" class="btn-fechar-form">
-          <span class="fechar-form" style="cursor: pointer;">X</span>
-        </label>
-        <h2 class="add-doc__form-titulo">Adicionar Novo Documento</h2>
-        <input type="text" class="form-input titulo-documento" placeholder="Título do Documento">
-        <textarea type="text" class="form-input conteudo-documento" placeholder="Conteúdo do Documento"></textarea>
-        <button class="salvar-doc">Salvar Documento</button>
+    <!-- Create Document Modal (standard modal style) -->
+    <div id="createDocumentModal" class="modal" onclick="DocumentService.closeCreateModal()">
+      <div class="modal__content" onclick="event.stopPropagation()">
+        <div class="modal__header">
+          <h3 class="modal__title">Adicionar Novo Documento</h3>
+          <button class="modal__close" onclick="DocumentService.closeCreateModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal__body">
+          <!-- Inputs updated to match DocumentService expected IDs -->
+          <input id="docTitleInput" type="text" class="modal__input" placeholder="Título do Documento">
+          <textarea id="docContentInput" class="modal__input" placeholder="Conteúdo do Documento"></textarea>
+          <input id="docAuthorInput" type="text" class="modal__input" placeholder="Autor (ex: usuário)">
+          <input id="docProcessIdInput" type="text" class="modal__input" placeholder="ID do Processo (opcional)">
+          <div class="modal__buttons">
+            <button class="modal__button modal__button--secondary" onclick="DocumentService.closeCreateModal()">Cancelar</button>
+            <button class="modal__button modal__button--primary" onclick="DocumentService.create()">Salvar Documento</button>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
+    
+    <!-- Create Process Modal -->
+    <div id="createProcessModal" class="modal" onclick="closeCreateProcessModal()">
+      <div class="modal__content" onclick="event.stopPropagation()">
+        <div class="modal__header">➕ Criar Processo</div>
+        <div class="modal__body">
+          <input id="newProcessNumber" type="text" class="modal__input" placeholder="Número do Processo (ex: PROC-001)">
+          <input id="newProcessTitle" type="text" class="modal__input" placeholder="Título do Processo">
+          <textarea id="newProcessDescription" class="modal__input" placeholder="Descrição (opcional)"></textarea>
+          <div class="modal__buttons">
+            <button class="modal__button modal__button--secondary" onclick="closeCreateProcessModal()">Cancelar</button>
+            <button class="modal__button modal__button--primary" onclick="executeCreateProcess()">Criar Processo</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modals -->
@@ -234,6 +251,65 @@
   <script src="/ui/js/modals.js"></script>
   <script type="module" src="/ui/js/app.js"></script>
   <script src="/ui/js/main.js"></script>
+  <script>
+    // Create Process modal helpers
+    window.createProcessModal = function() {
+      const modal = document.getElementById('createProcessModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      const num = document.getElementById('newProcessNumber');
+      if (num) { num.value = ''; num.focus(); }
+      const title = document.getElementById('newProcessTitle');
+      if (title) title.value = '';
+      const desc = document.getElementById('newProcessDescription');
+      if (desc) desc.value = '';
+    };
+
+    window.closeCreateProcessModal = function() {
+      const modal = document.getElementById('createProcessModal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.executeCreateProcess = async function() {
+      const number = document.getElementById('newProcessNumber')?.value?.trim();
+      const title = document.getElementById('newProcessTitle')?.value?.trim();
+      const description = document.getElementById('newProcessDescription')?.value?.trim();
+
+      if (!number || !title) {
+        alert('Número e título do processo são obrigatórios.');
+        return;
+      }
+
+      const payload = { number, title };
+      if (description) payload.description = description;
+
+      const token = localStorage.getItem('jwtToken');
+      try {
+        const resp = await fetch(window.location.origin + '/api/processes', {
+          method: 'POST',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'Authorization': 'Bearer ' + token } : {}),
+          body: JSON.stringify(payload)
+        });
+
+        const data = await resp.json().catch(() => ({}));
+
+        if (resp.ok) {
+          alert('Processo criado com sucesso.');
+          closeCreateProcessModal();
+          // If we are on the processes page, refresh the list
+          if (window.loadAllProcesses) {
+            try { window.loadAllProcesses(); } catch (e) { /* ignore */ }
+          }
+        } else {
+          const err = data.error || data.message || JSON.stringify(data);
+          alert('Falha ao criar processo: ' + err);
+        }
+      } catch (error) {
+        console.error('Create process failed:', error);
+        alert('Erro ao criar processo: ' + (error.message || error));
+      }
+    };
+  </script>
 </body>
 
 </html>
