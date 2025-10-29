@@ -237,36 +237,6 @@
 
 ---
 
-## 🚀 **Roadmap de Desenvolvimento**
-
-### **Fase 1 - MVP (Concluído) ✅**
-- ✅ Arquitetura SOA básica
-- ✅ Módulos de documentos, prazos e audiências
-- ✅ Sistema de autenticação e autorização
-- ✅ Interface web responsiva
-- ✅ Orquestração básica
-
-### **Fase 2 - Expansão (Q1 2025) 🚧**
-- 🔄 Integração com banco de dados PostgreSQL
-- 🔄 Sistema de notificações push
-- 🔄 Relatórios e dashboards avançados
-- 🔄 API de integração com sistemas externos
-- 🔄 Mobile app nativo
-
-### **Fase 3 - Inteligência (Q2-Q3 2025) 🔮**
-- 🤖 IA para análise de documentos
-- 🤖 Workflow automation avançado
-- 🤖 Integração com tribunais
-- 🤖 Machine learning para previsões
-- 🤖 Chatbot para suporte
-
-### **Fase 4 - Inovação (Q4 2025+) 🌟**
-- 🔗 Blockchain para documentos
-- 🔗 Marketplace de serviços jurídicos
-- 🔗 Expansão internacional
-- 🔗 Integração com IoT
-- 🔗 Realidade aumentada para audiências
-
 ---
 
 ## 💼 **Modelo de Negócio**
