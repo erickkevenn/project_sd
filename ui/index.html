@@ -193,11 +193,12 @@
           </button>
         </div>
         <div class="modal__body">
-          <!-- Inputs updated to match DocumentService expected IDs -->
-          <input id="docTitleInput" type="text" class="modal__input" placeholder="Título do Documento">
-          <textarea id="docContentInput" class="modal__input" placeholder="Conteúdo do Documento"></textarea>
-          <input id="docAuthorInput" type="text" class="modal__input" placeholder="Autor (ex: usuário)">
-          <input id="docProcessIdInput" type="text" class="modal__input" placeholder="ID do Processo (opcional)">
+          <!-- Process ID - REQUIRED -->
+          <input id="docProcessIdInput" type="text" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required>
+          <!-- Document fields -->
+          <input id="docTitleInput" type="text" class="modal__input" placeholder="Título do Documento *" required>
+          <textarea id="docContentInput" class="modal__input" placeholder="Conteúdo do Documento *" required></textarea>
+          <input id="docAuthorInput" type="text" class="modal__input" placeholder="Autor (ex: usuário) *" required>
           <div class="modal__buttons">
             <button class="modal__button modal__button--secondary" onclick="DocumentService.closeCreateModal()">Cancelar</button>
             <button class="modal__button modal__button--primary" onclick="DocumentService.create()">Salvar Documento</button>
@@ -280,7 +281,15 @@
         return;
       }
 
-      const payload = { number, title };
+      // Validação do padrão do número do processo: deve começar com 'PROC-' seguido de dígitos (ex.: PROC-001 ou PROC-001000)
+      const normalized = number.toUpperCase();
+      const pattern = /^PROC-\d+$/;
+      if (!pattern.test(normalized)) {
+        alert("Formato do número de processo inválido. Use 'PROC-' seguido apenas de números. Ex.: PROC-001, PROC-12, PROC-001000.");
+        return;
+      }
+
+  const payload = { number: normalized, title };
       if (description) payload.description = description;
 
       const token = localStorage.getItem('jwtToken');

@@ -4,6 +4,7 @@ Implementa autenticação JWT, autorização, validação e outras medidas de se
 """
 
 import jwt
+import re
 import os
 import datetime
 from functools import wraps
@@ -71,7 +72,7 @@ class RegisterSchema(Schema):
 
 class ProcessSchema(Schema):
     """Schema para processos"""
-    number = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    number = fields.Str(required=True, validate=lambda x: bool(re.match(r"^PROC-\d+$", x.strip().upper())))
     title = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
     description = fields.Str(missing="")
     status = fields.Str(missing="open")

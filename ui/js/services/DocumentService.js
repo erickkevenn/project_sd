@@ -33,24 +33,14 @@ class DocumentService {
     if (!modal) return;
 
     // Clear form fields
-    const fields = ['docTitleInput', 'docContentInput', 'docAuthorInput', 'docProcessIdInput'];
+    const fields = ['docProcessIdInput', 'docTitleInput', 'docContentInput', 'docAuthorInput'];
     fields.forEach(fieldId => {
       const element = document.getElementById(fieldId);
       if (element) element.value = '';
     });
 
     modal.style.display = 'flex';
-    document.getElementById('docTitleInput')?.focus();
-
-    // Setup enter key listener
-    const processIdInput = document.getElementById('docProcessIdInput');
-    if (processIdInput) {
-      processIdInput.onkeypress = (e) => {
-        if (e.key === 'Enter') {
-          this.create();
-        }
-      };
-    }
+    document.getElementById('docProcessIdInput')?.focus();
   }
 
   /**
@@ -62,6 +52,12 @@ class DocumentService {
     const author = document.getElementById('docAuthorInput')?.value?.trim();
     const processId = document.getElementById('docProcessIdInput')?.value?.trim();
 
+    // Validate required fields
+    if (!processId) {
+      alert('⚠️ Por favor, selecione um processo.\n\nDocumentos devem estar associados a um processo existente.');
+      return;
+    }
+
     if (!title || !content || !author) {
       alert('Por favor, preencha todos os campos obrigatórios (título, conteúdo e autor).');
       return;
@@ -70,19 +66,16 @@ class DocumentService {
     const documentData = {
       title,
       content,
-      author
+      author,
+      process_id: processId
     };
-
-    if (processId) {
-      documentData.process_id = processId;
-    }
 
     try {
       this.closeCreateModal();
       const response = await this.api.post('/api/documents', documentData);
       
       if (response.ok) {
-        this.showSuccessMessage('Documento criado com sucesso!');
+        this.showSuccessMessage(`✅ Documento criado com sucesso!\n\nProcesso: ${processId}`);
       } else {
         this.api.handleError(response, 'Criar documento');
       }

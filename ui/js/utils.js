@@ -305,6 +305,143 @@ function setupModalCloseHandler(modalId, closeFunction) {
   }
 }
 
+/**
+ * Fetch all processes from API
+ * @returns {Promise<Array>} List of processes
+ */
+async function fetchAllProcesses() {
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
+
+    // Try to get from processes endpoint first
+    try {
+      const response = await fetch('/api/processes', { headers });
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data.map(p => ({
+            id: p.id || p.number || p.process_id,
+            number: p.number || p.id || p.process_id,
+            title: p.title || p.name || `Processo ${p.number || p.id}`,
+            created_at: p.created_at
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch from /api/processes:', e);
+    }
+
+    // Fallback: aggregate from documents, deadlines, and hearings
+    const [docsRes, deadlinesRes, hearingsRes] = await Promise.all([
+      fetch('/api/documents', { headers }),
+      fetch('/api/deadlines', { headers }),
+      fetch('/api/hearings', { headers })
+    ]);
+
+    const processMap = new Map();
+
+    // Collect from documents
+    if (docsRes.ok) {
+      const docs = await docsRes.json();
+      if (Array.isArray(docs)) {
+        docs.forEach(doc => {
+          if (doc.process_id && !processMap.has(doc.process_id)) {
+            processMap.set(doc.process_id, {
+              id: doc.process_id,
+              number: doc.process_id,
+              title: `Processo ${doc.process_id}`,
+              created_at: doc.created_at || doc.timestamp
+            });
+          }
+        });
+      }
+    }
+
+    // Collect from deadlines
+    if (deadlinesRes.ok) {
+      const deadlines = await deadlinesRes.json();
+      if (Array.isArray(deadlines)) {
+        deadlines.forEach(deadline => {
+          if (deadline.process_id && !processMap.has(deadline.process_id)) {
+            processMap.set(deadline.process_id, {
+              id: deadline.process_id,
+              number: deadline.process_id,
+              title: `Processo ${deadline.process_id}`,
+              created_at: deadline.created_at
+            });
+          }
+        });
+      }
+    }
+
+    // Collect from hearings
+    if (hearingsRes.ok) {
+      const hearingsData = await hearingsRes.json();
+      const hearings = hearingsData.items || hearingsData;
+      if (Array.isArray(hearings)) {
+        hearings.forEach(hearing => {
+          if (hearing.process_id && !processMap.has(hearing.process_id)) {
+            processMap.set(hearing.process_id, {
+              id: hearing.process_id,
+              number: hearing.process_id,
+              title: `Processo ${hearing.process_id}`,
+              created_at: hearing.created_at
+            });
+          }
+        });
+      }
+    }
+
+    return Array.from(processMap.values()).sort((a, b) => {
+      if (!a.created_at) return 1;
+      if (!b.created_at) return -1;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  } catch (error) {
+    console.error('Error fetching processes:', error);
+    return [];
+  }
+}
+
+/**
+ * Render process select dropdown
+ * @param {string} selectId - ID of the select element
+ * @param {string} selectedValue - Currently selected value (optional)
+ */
+async function renderProcessSelect(selectId, selectedValue = null) {
+  const selectElement = document.getElementById(selectId);
+  if (!selectElement) return;
+
+  // Show loading
+  selectElement.innerHTML = '<option value="">Carregando processos...</option>';
+  selectElement.disabled = true;
+
+  try {
+    const processes = await fetchAllProcesses();
+    
+    if (processes.length === 0) {
+      selectElement.innerHTML = '<option value="">Nenhum processo encontrado</option>';
+      return;
+    }
+
+    let html = '<option value="">Selecione um processo *</option>';
+    processes.forEach(process => {
+      const selected = selectedValue === process.number ? 'selected' : '';
+      html += `<option value="${escapeHtml(process.number)}" ${selected}>${escapeHtml(process.number)} - ${escapeHtml(process.title)}</option>`;
+    });
+    
+    selectElement.innerHTML = html;
+    selectElement.disabled = false;
+  } catch (error) {
+    console.error('Error rendering process select:', error);
+    selectElement.innerHTML = '<option value="">Erro ao carregar processos</option>';
+  }
+}
+
 // Export functions for use in other modules
 if (typeof window !== 'undefined') {
   window.Utils = {
@@ -314,7 +451,9 @@ if (typeof window !== 'undefined') {
     renderProcessSummary,
     validateProcessId,
     showLoadingState,
-    setupModalCloseHandler
+    setupModalCloseHandler,
+    fetchAllProcesses,
+    renderProcessSelect
   };
 }
 

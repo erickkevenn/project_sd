@@ -20,9 +20,13 @@ def health():
 @app.post("/hearings")
 def create_hearing():
     data = request.get_json(force=True)
+    # Exige associação com process_id
+    if not data.get("process_id"):
+        return jsonify({"error": "Field 'process_id' is required to create a hearing"}), 400
+
     item = {
         "id": str(uuid.uuid4())[:8],
-        "process_id": data.get("process_id", ""),
+        "process_id": data.get("process_id"),
         "date": data.get("date", ""),
         "courtroom": data.get("courtroom", "Sala 1")
     }

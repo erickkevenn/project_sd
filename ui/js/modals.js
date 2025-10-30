@@ -3,6 +3,48 @@
  * Handles modal management and form operations
  */
 
+// Helper to dispatch API requests in a backward-compatible way.
+// Prefer `hit` (legacy), then `apiRequest` (page-local helper), then fallback to fetch.
+function dispatchRequest(path, method = 'GET', body = null) {
+  try {
+    if (typeof window.hit === 'function') {
+      // legacy global helper (may not return a promise)
+      try { window.hit(path, method, body); } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (typeof window.apiRequest === 'function') {
+      const options = { method };
+      if (body) options.body = JSON.stringify(body);
+      // apiRequest returns a promise
+      window.apiRequest(path, options).catch(err => console.warn('apiRequest error', err));
+      return;
+    }
+
+    // Fallback: simple fetch
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('jwtToken');
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    fetch(path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    }).then(async res => {
+      if (!res.ok) {
+        let err = 'Erro na requisição';
+        try { const j = await res.json(); err = j.error || j.message || err; } catch {};
+        alert(err);
+      }
+    }).catch(e => {
+      console.error('dispatchRequest fetch error', e);
+      alert('Erro na requisição: ' + (e.message || e));
+    });
+  } catch (e) {
+    console.error('dispatchRequest error', e);
+  }
+}
+
 // === FUNÇÕES DE CRIAÇÃO COM MODAIS ===
 
 // Criar Documento
@@ -61,7 +103,7 @@ function executeCreateDocument() {
   }
   
   closeCreateDocumentModal();
-  hit('/api/documents', 'POST', documentData);
+  dispatchRequest('/api/documents', 'POST', documentData);
 }
 
 // Criar Prazo
@@ -204,7 +246,7 @@ function executeCreateHearing() {
   };
   
   closeCreateHearingModal();
-  hit('/api/hearings', 'POST', hearingData);
+  dispatchRequest('/api/hearings', 'POST', hearingData);
 }
 
 // === FUNÇÕES DE BUSCA DE DOCUMENTOS ===
@@ -238,7 +280,7 @@ function executeSearch() {
   }
   
   closeSearchModal();
-  hit(`/api/documents/${docId}`, 'GET');
+  dispatchRequest(`/api/documents/${docId}`, 'GET');
 }
 
 // === FUNÇÕES DE BUSCA DE PROCESSOS ===
@@ -272,7 +314,7 @@ function executeProcessSearch() {
   }
   
   closeProcessModal();
-  hit(`/api/process/${processId}/summary`, 'GET');
+  dispatchRequest(`/api/process/${processId}/summary`, 'GET');
 }
 
 // === FUNÇÕES DE EXCLUSÃO ===
@@ -306,7 +348,7 @@ function executeDelete() {
   }
   
   closeDeleteModal();
-  hit(`/api/documents/${docId}`, 'DELETE');
+  dispatchRequest(`/api/documents/${docId}`, 'DELETE');
 }
 
 function deleteDeadline() {
@@ -393,31 +435,31 @@ function executeDeleteHearing() {
   }
   
   closeDeleteHearingModal();
-  hit(`/api/hearings/${hearingId}`, 'DELETE');
+  dispatchRequest(`/api/hearings/${hearingId}`, 'DELETE');
 }
 
 // Export functions for global access
-window.createDocument = createDocument;
-window.closeCreateDocumentModal = closeCreateDocumentModal;
-window.executeCreateDocument = executeCreateDocument;
-window.createDeadlineModal = createDeadlineModal;
-window.closeCreateDeadlineModal = closeCreateDeadlineModal;
-window.executeCreateDeadline = executeCreateDeadline;
-window.createHearingModal = createHearingModal;
-window.closeCreateHearingModal = closeCreateHearingModal;
-window.executeCreateHearing = executeCreateHearing;
-window.searchDocument = searchDocument;
-window.closeSearchModal = closeSearchModal;
-window.executeSearch = executeSearch;
-window.searchProcess = searchProcess;
-window.closeProcessModal = closeProcessModal;
-window.executeProcessSearch = executeProcessSearch;
-window.deleteDocument = deleteDocument;
-window.closeDeleteModal = closeDeleteModal;
-window.executeDelete = executeDelete;
-window.deleteDeadline = deleteDeadline;
-window.closeDeleteDeadlineModal = closeDeleteDeadlineModal;
-window.executeDeleteDeadline = executeDeleteDeadline;
-window.deleteHearing = deleteHearing;
-window.closeDeleteHearingModal = closeDeleteHearingModal;
-window.executeDeleteHearing = executeDeleteHearing;
+if (!window.createDocument) window.createDocument = createDocument;
+if (!window.closeCreateDocumentModal) window.closeCreateDocumentModal = closeCreateDocumentModal;
+if (!window.executeCreateDocument) window.executeCreateDocument = executeCreateDocument;
+if (!window.createDeadlineModal) window.createDeadlineModal = createDeadlineModal;
+if (!window.closeCreateDeadlineModal) window.closeCreateDeadlineModal = closeCreateDeadlineModal;
+if (!window.executeCreateDeadline) window.executeCreateDeadline = executeCreateDeadline;
+if (!window.createHearingModal) window.createHearingModal = createHearingModal;
+if (!window.closeCreateHearingModal) window.closeCreateHearingModal = closeCreateHearingModal;
+if (!window.executeCreateHearing) window.executeCreateHearing = executeCreateHearing;
+if (!window.searchDocument) window.searchDocument = searchDocument;
+if (!window.closeSearchModal) window.closeSearchModal = closeSearchModal;
+if (!window.executeSearch) window.executeSearch = executeSearch;
+if (!window.searchProcess) window.searchProcess = searchProcess;
+if (!window.closeProcessModal) window.closeProcessModal = closeProcessModal;
+if (!window.executeProcessSearch) window.executeProcessSearch = executeProcessSearch;
+if (!window.deleteDocument) window.deleteDocument = deleteDocument;
+if (!window.closeDeleteModal) window.closeDeleteModal = closeDeleteModal;
+if (!window.executeDelete) window.executeDelete = executeDelete;
+if (!window.deleteDeadline) window.deleteDeadline = deleteDeadline;
+if (!window.closeDeleteDeadlineModal) window.closeDeleteDeadlineModal = closeDeleteDeadlineModal;
+if (!window.executeDeleteDeadline) window.executeDeleteDeadline = executeDeleteDeadline;
+if (!window.deleteHearing) window.deleteHearing = deleteHearing;
+if (!window.closeDeleteHearingModal) window.closeDeleteHearingModal = closeDeleteHearingModal;
+if (!window.executeDeleteHearing) window.executeDeleteHearing = executeDeleteHearing;

@@ -260,6 +260,22 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def create_document():
         """Cria um novo documento"""
         try:
+            # Verifica obrigatoriedade de `process_id` e existência do processo
+            process_id = request.validated_data.get('process_id')
+            if not process_id:
+                return jsonify({"error": "Field 'process_id' is required to create a document"}), 400
+
+            # Valida existência do processo no serviço de processos (busca por número)
+            try:
+                proc_resp, proc_status = service_client.forward_request(
+                    "processes", "GET", f"/processes/by-number/{process_id}"
+                )
+            except Exception:
+                return jsonify({"error": "Failed to validate process existence"}), 503
+
+            if proc_status != 200:
+                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+
             # Verifica se deve usar gRPC
             if getattr(request, 'prefer_grpc', False) and grpc_client.is_available('documents'):
                 response_data, status_code = grpc_client.call_service(
@@ -324,6 +340,22 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def create_deadline():
         """Cria um novo prazo"""
         try:
+            # Valida presence de process_id
+            process_id = request.validated_data.get('process_id')
+            if not process_id:
+                return jsonify({"error": "Field 'process_id' is required to create a deadline"}), 400
+
+            # Valida existência do processo (busca por número)
+            try:
+                proc_resp, proc_status = service_client.forward_request(
+                    "processes", "GET", f"/processes/by-number/{process_id}"
+                )
+            except Exception:
+                return jsonify({"error": "Failed to validate process existence"}), 503
+
+            if proc_status != 200:
+                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+
             response_data, status_code = service_client.forward_request(
                 "deadlines", "POST", "/deadlines", json_body=request.validated_data
             )
@@ -464,6 +496,22 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def create_hearing():
         """Cria uma nova audiência"""
         try:
+            # Valida presence de process_id
+            process_id = request.validated_data.get('process_id')
+            if not process_id:
+                return jsonify({"error": "Field 'process_id' is required to create a hearing"}), 400
+
+            # Valida existência do processo (busca por número)
+            try:
+                proc_resp, proc_status = service_client.forward_request(
+                    "processes", "GET", f"/processes/by-number/{process_id}"
+                )
+            except Exception:
+                return jsonify({"error": "Failed to validate process existence"}), 503
+
+            if proc_status != 200:
+                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+
             response_data, status_code = service_client.forward_request(
                 "hearings", "POST", "/hearings", json_body=request.validated_data
             )
@@ -541,34 +589,82 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         try:
             payload = request.get_json(force=True)
             results = {}
-            
+            # Se há definição de processo no payload, cria o processo primeiro
+            used_process_id = None
+            if "process" in payload and isinstance(payload["process"], dict):
+                try:
+                    proc_data, proc_status = service_client.forward_request(
+                        "processes", "POST", "/processes", json_body=payload["process"]
+                    )
+                    if proc_status == 201 and isinstance(proc_data, dict):
+                        # microservices retornam o objeto criado
+                        used_process_id = proc_data.get('id')
+                    else:
+                        results['process'] = {"status": proc_status, "data": proc_data}
+                except Exception as e:
+                    results['process'] = {"status": "error", "error": str(e)}
+
+            # Helper: valida/obtém process_id para criação de recursos
+            def resolve_and_validate_process_id(item: dict):
+                nonlocal used_process_id
+                pid = item.get('process_id') or used_process_id
+                if not pid:
+                    return None, ({"error": "Field 'process_id' is required for related items"}, 400)
+                try:
+                    pr, ps = service_client.forward_request("processes", "GET", f"/processes/{pid}")
+                except Exception:
+                    return None, ({"error": "Failed to validate process existence"}, 503)
+                if ps != 200:
+                    return None, ({"error": "Associated process not found"}, 404)
+                used_process_id = pid
+                return pid, (None, None)
+
             # Cria documento
             if "document" in payload:
                 try:
-                    doc_data, doc_status = service_client.forward_request(
-                        "documents", "POST", "/documents", json_body=payload["document"]
-                    )
-                    results["document"] = {"status": doc_status, "data": doc_data}
+                    doc_item = payload["document"]
+                    pid, err = resolve_and_validate_process_id(doc_item)
+                    if err[0] is not None:
+                        results["document"] = {"status": err[1], "data": err[0]}
+                    else:
+                        # assegura que o document payload contenha o process_id usado
+                        doc_item["process_id"] = used_process_id
+                        doc_data, doc_status = service_client.forward_request(
+                            "documents", "POST", "/documents", json_body=doc_item
+                        )
+                        results["document"] = {"status": doc_status, "data": doc_data}
                 except Exception as e:
                     results["document"] = {"status": "error", "error": str(e)}
-            
+
             # Cria prazo
             if "deadline" in payload:
                 try:
-                    deadline_data, deadline_status = service_client.forward_request(
-                        "deadlines", "POST", "/deadlines", json_body=payload["deadline"]
-                    )
-                    results["deadline"] = {"status": deadline_status, "data": deadline_data}
+                    dl_item = payload["deadline"]
+                    pid, err = resolve_and_validate_process_id(dl_item)
+                    if err[0] is not None:
+                        results["deadline"] = {"status": err[1], "data": err[0]}
+                    else:
+                        dl_item["process_id"] = used_process_id
+                        deadline_data, deadline_status = service_client.forward_request(
+                            "deadlines", "POST", "/deadlines", json_body=dl_item
+                        )
+                        results["deadline"] = {"status": deadline_status, "data": deadline_data}
                 except Exception as e:
                     results["deadline"] = {"status": "error", "error": str(e)}
-            
+
             # Cria audiência
             if "hearing" in payload:
                 try:
-                    hearing_data, hearing_status = service_client.forward_request(
-                        "hearings", "POST", "/hearings", json_body=payload["hearing"]
-                    )
-                    results["hearing"] = {"status": hearing_status, "data": hearing_data}
+                    hr_item = payload["hearing"]
+                    pid, err = resolve_and_validate_process_id(hr_item)
+                    if err[0] is not None:
+                        results["hearing"] = {"status": err[1], "data": err[0]}
+                    else:
+                        hr_item["process_id"] = used_process_id
+                        hearing_data, hearing_status = service_client.forward_request(
+                            "hearings", "POST", "/hearings", json_body=hr_item
+                        )
+                        results["hearing"] = {"status": hearing_status, "data": hearing_data}
                 except Exception as e:
                     results["hearing"] = {"status": "error", "error": str(e)}
             

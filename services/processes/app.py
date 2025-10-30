@@ -5,6 +5,7 @@ Serviço de Processos isolado com persistência JSON (CRUD básico)
 import os
 import json
 import threading
+import re
 from typing import Dict, Any, Optional
 
 from flask import Flask, request, jsonify
@@ -73,6 +74,14 @@ def create_app() -> Flask:
     def list_processes():
         return jsonify(list(PROCESSES.values())), 200
 
+    @app.get("/processes/by-number/<process_number>")
+    def get_process_by_number(process_number: str):
+        """Busca processo pelo número (ex: PROC-001) ao invés do ID interno"""
+        for proc in PROCESSES.values():
+            if proc.get("number") == process_number:
+                return jsonify(proc), 200
+        return jsonify({"error": "Process not found"}), 404
+
     @app.post("/processes")
     def create_process():
         data = request.get_json(force=True) or {}
@@ -80,10 +89,22 @@ def create_app() -> Flask:
         for field in required:
             if not data.get(field):
                 return jsonify({"error": f"Field '{field}' is required"}), 400
+
+        # Normaliza e valida o número do processo: deve começar com 'PROC-' seguido apenas de dígitos (ex.: PROC-001, PROC-12, PROC-001000)
+        number_raw = str(data.get("number", "")).strip()
+        number = number_raw.upper()
+        if not re.match(r"^PROC-\d+$", number):
+            return jsonify({"error": "Formato do número inválido. Use 'PROC-' seguido apenas de números (ex.: PROC-001, PROC-12, PROC-001000)."}), 400
+
+        # Impede duplicidade de número de processo
+        for existing in PROCESSES.values():
+            if existing.get("number") == number:
+                return jsonify({"error": "Já existe um processo com este número. Altere o número e tente novamente."}), 409
+
         proc_id = str(uuid.uuid4())[:8]
         item = {
             "id": proc_id,
-            "number": str(data.get("number")),
+            "number": number,
             "title": str(data.get("title")),
             "description": str(data.get("description", "")),
             "status": str(data.get("status", "open")),
@@ -107,7 +128,18 @@ def create_app() -> Flask:
             return jsonify({"error": "Process not found"}), 404
         data = request.get_json(force=True) or {}
         item = PROCESSES[proc_id].copy()
-        for field in ["number", "title", "description", "status"]:
+
+        # Se atualizar o número, valida formato e duplicidade
+        if "number" in data:
+            new_number = str(data["number"]).strip().upper()
+            if not re.match(r"^PROC-\d+$", new_number):
+                return jsonify({"error": "Formato do número inválido. Use 'PROC-' seguido apenas de números."}), 400
+            for k, existing in PROCESSES.items():
+                if k != proc_id and existing.get("number") == new_number:
+                    return jsonify({"error": "Já existe um processo com este número."}), 409
+            item["number"] = new_number
+
+        for field in ["title", "description", "status"]:
             if field in data:
                 item[field] = str(data[field])
         item["updated_at"] = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat()

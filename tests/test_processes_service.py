@@ -32,7 +32,7 @@ def test_processes_crud():
     # Create
     resp = client.post(
         "/processes",
-        json={"number": "0001", "title": "Ação", "description": "Teste"},
+        json={"number": "PROC-001", "title": "Ação", "description": "Teste"},
     )
     assert resp.status_code == 201
     created = resp.get_json()

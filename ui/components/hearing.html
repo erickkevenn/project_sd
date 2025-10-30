@@ -64,10 +64,10 @@
         <div class="modal__content" onclick="event.stopPropagation()">
             <div class="modal__header">🏛️ Agendar Audiência</div>
             <div class="info-text">Preencha as informações da audiência:</div>
-            <input type="text" id="hearingProcessIdInput" class="modal__input" placeholder="ID do Processo" />
-            <input type="date" id="hearingDateInput" class="modal__input" />
-            <input type="text" id="hearingCourtroomInput" class="modal__input" placeholder="Sala da audiência" />
-            <textarea id="hearingDescInput" class="modal__input" placeholder="Descrição da audiência" rows="3"></textarea>
+            <input type="text" id="hearingProcessIdInput" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required />
+            <input type="date" id="hearingDateInput" class="modal__input" required />
+            <input type="text" id="hearingCourtroomInput" class="modal__input" placeholder="Sala da audiência *" required />
+            <textarea id="hearingDescInput" class="modal__input" placeholder="Descrição da audiência *" rows="3" required></textarea>
             <div class="modal__buttons">
                 <button class="modal__button modal__button--secondary" onclick="closeCreateHearingModal()">Cancelar</button>
                 <button class="modal__button modal__button--primary" onclick="executeCreateHearing()">Agendar Audiência</button>
@@ -291,8 +291,14 @@
             const courtroom = document.getElementById('hearingCourtroomInput')?.value?.trim();
             const description = document.getElementById('hearingDescInput')?.value?.trim();
 
-            if (!processId || !date || !courtroom || !description) {
-                alert('Por favor, preencha todos os campos.');
+            // Validate required fields
+            if (!processId) {
+                alert('⚠️ Por favor, selecione um processo.\n\nAudiências devem estar associadas a um processo existente.');
+                return;
+            }
+
+            if (!date || !courtroom || !description) {
+                alert('Por favor, preencha todos os campos obrigatórios (data, sala e descrição).');
                 return;
             }
 
@@ -305,7 +311,7 @@
                 });
 
                 if (response.ok) {
-                    alert('Audiência agendada com sucesso!');
+                    alert(`✅ Audiência agendada com sucesso!\n\nProcesso: ${processId}\nData: ${date}\nSala: ${courtroom}`);
                     loadAllHearings();
                 } else {
                     alert(`Erro ao agendar audiência: ${response.data.error || 'Erro desconhecido'}`);

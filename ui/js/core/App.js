@@ -24,6 +24,8 @@ class App {
     try {
       // Load components first
       await this.loadComponents();
+      // After components mount, wire message helpers and replace window.alert
+      this._installMessageHandlers();
       
       // Load saved token
       const savedToken = localStorage.getItem("jwtToken");
@@ -227,7 +229,93 @@ class App {
     
     // Show user-friendly error message
     const errorMessage = error.message || 'Ocorreu um erro inesperado';
-    alert(`Erro: ${errorMessage}`);
+    this.showMessage('error', 'Ops! Algo deu errado', errorMessage);
+  }
+
+  /**
+   * Install global message/alert handlers
+   */
+  _installMessageHandlers() {
+    // expose instance for non-module scripts
+    window.App = this;
+    const self = this;
+    // Replace blocking browser alert with our modal
+    window.alert = function(message) {
+      try {
+        self.showMessage('info', 'Aviso', String(message ?? ''));
+      } catch (_) {
+        // fallback gracefully if modal not ready
+        console.log('[App] alert fallback:', message);
+      }
+    };
+  }
+
+  /**
+   * Show a styled message modal
+   * @param {'info'|'success'|'warning'|'error'} type
+   * @param {string} title
+   * @param {string} text
+   * @param {{details?: string}} [options]
+   */
+  showMessage(type='info', title='Mensagem', text='', options={}) {
+    const modal = document.getElementById('messageModal');
+    const header = document.getElementById('messageModalHeader');
+    const icon = document.getElementById('messageModalIcon');
+    const titleEl = document.getElementById('messageModalTitle');
+    const textEl = document.getElementById('messageModalText');
+    const detailsEl = document.getElementById('messageModalDetails');
+    if (!modal || !header || !icon || !titleEl || !textEl) {
+      // If modal isn't available, fallback
+      return window.console?.log?.(`[App] ${type.toUpperCase()}: ${title} - ${text}`);
+    }
+
+    const typeConfig = {
+      info: { icon: 'ℹ️', cls: 'message--info' },
+      success: { icon: '✅', cls: 'message--success' },
+      warning: { icon: '⚠️', cls: 'message--warning' },
+      error: { icon: '❌', cls: 'message--error' }
+    }[type] || { icon: 'ℹ️', cls: 'message--info' };
+
+    // reset header style classes
+    header.classList.remove('message--info','message--success','message--warning','message--error');
+    header.classList.add(typeConfig.cls);
+    icon.textContent = typeConfig.icon;
+    titleEl.textContent = title;
+    textEl.textContent = text;
+
+    if (options.details) {
+      detailsEl.style.display = 'block';
+      detailsEl.textContent = options.details;
+    } else if (detailsEl) {
+      detailsEl.style.display = 'none';
+      detailsEl.textContent = '';
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  /** Close message modal */
+  closeMessage() {
+    const modal = document.getElementById('messageModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  /**
+   * Show toast notification
+   */
+  showToast(type='info', message='') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return console.log('[App] TOAST:', message);
+    const el = document.createElement('div');
+    el.className = `toast toast--${type}`;
+    const iconMap = { success:'✅', info:'ℹ️', warning:'⚠️', error:'❌' };
+    el.innerHTML = `<span class="toast__icon">${iconMap[type] || 'ℹ️'}</span><div class="toast__message">${message}</div><button class="toast__close" aria-label="Fechar">×</button>`;
+    const closer = el.querySelector('.toast__close');
+    closer.addEventListener('click', () => container.removeChild(el));
+    container.appendChild(el);
+    setTimeout(() => {
+      if (container.contains(el)) container.removeChild(el);
+    }, 4000);
   }
 
   /**

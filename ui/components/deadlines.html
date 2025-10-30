@@ -65,9 +65,9 @@
         <div class="modal__content" onclick="event.stopPropagation()">
             <div class="modal__header">⏰ Criar Prazo</div>
             <div class="info-text">Preencha as informações do prazo:</div>
-            <input type="text" id="deadlineProcessIdInput" class="modal__input" placeholder="ID do Processo" />
-            <input type="date" id="deadlineDateInput" class="modal__input" />
-            <textarea id="deadlineDescInput" class="modal__input" placeholder="Descrição do prazo" rows="3"></textarea>
+            <input type="text" id="deadlineProcessIdInput" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required />
+            <input type="date" id="deadlineDateInput" class="modal__input" required />
+            <textarea id="deadlineDescInput" class="modal__input" placeholder="Descrição do prazo *" rows="3" required></textarea>
             <div class="modal__buttons">
                 <button class="modal__button modal__button--secondary" onclick="closeCreateDeadlineModal()">Cancelar</button>
                 <button class="modal__button modal__button--primary" onclick="executeCreateDeadline()">Criar Prazo</button>

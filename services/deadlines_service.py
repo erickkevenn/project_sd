@@ -24,9 +24,13 @@ def list_deadlines():
 @app.post("/deadlines")
 def create_deadline():
     data = request.get_json(force=True)
+    # Exige associação com process_id
+    if not data.get("process_id"):
+        return jsonify({"error": "Field 'process_id' is required to create a deadline"}), 400
+
     item = {
         "id": str(uuid.uuid4())[:8],
-        "process_id": data.get("process_id", ""),
+        "process_id": data.get("process_id"),
         "due_date": data.get("due_date", ""),
     }
     DEADLINES.append(item)
