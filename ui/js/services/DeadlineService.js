@@ -72,16 +72,6 @@ class DeadlineService {
 
     modal.style.display = 'flex';
     document.getElementById('deadlineProcessIdInput')?.focus();
-
-    // Setup enter key listener
-    const descInput = document.getElementById('deadlineDescInput');
-    if (descInput) {
-      descInput.onkeypress = (e) => {
-        if (e.key === 'Enter') {
-          this.create();
-        }
-      };
-    }
   }
 
   /**
@@ -92,8 +82,14 @@ class DeadlineService {
     const date = document.getElementById('deadlineDateInput')?.value;
     const description = document.getElementById('deadlineDescInput')?.value?.trim();
 
-    if (!processId || !date || !description) {
-      alert('Por favor, preencha todos os campos.');
+    // Validate required fields
+    if (!processId) {
+      alert('⚠️ Por favor, selecione um processo.\n\nPrazos devem estar associados a um processo existente.');
+      return;
+    }
+
+    if (!date || !description) {
+      alert('Por favor, preencha todos os campos obrigatórios (data e descrição).');
       return;
     }
 
@@ -108,7 +104,7 @@ class DeadlineService {
       const response = await this.api.post('/api/deadlines', deadlineData);
       
       if (response.ok) {
-        this.showSuccessMessage('Prazo criado com sucesso!');
+        this.showSuccessMessage(`✅ Prazo criado com sucesso!\n\nProcesso: ${processId}\nVencimento: ${date}`);
       } else {
         this.api.handleError(response, 'Criar prazo');
       }

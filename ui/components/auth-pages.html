@@ -15,13 +15,14 @@
     
       <form class="auth-form" onsubmit="return false;">
         <div class="form-group">
-          <label for="username" class="form-label">Usuário</label>
-          <input id="username" type="text" placeholder="Digite seu usuário" class="form-input" />
+          <label for="email" class="form-label">Email</label>
+          <input id="email" type="email" placeholder="seu@email.com" class="form-input" required />
+          <small class="form-hint">Use @admin.com, @advogado.com ou @estagiario.com</small>
         </div>
         
         <div class="form-group">
           <label for="password" class="form-label">Senha</label>
-          <input id="password" type="password" placeholder="Digite sua senha" class="form-input" />
+          <input id="password" type="password" placeholder="Digite sua senha" class="form-input" required />
         </div>
       
       <button type="button" class="btn btn--primary btn--full" onclick="AuthService.login()">Entrar no Sistema</button>
@@ -67,32 +68,19 @@
       </div>
       
       <div class="form-group">
-        <label for="oabNumber">Número da OAB</label>
-        <input id="oabNumber" type="text" placeholder="Ex: 123456/SP" class="form-input" />
+        <label for="registerEmail">E-mail *</label>
+        <input id="registerEmail" type="email" placeholder="seu@admin.com, seu@advogado.com ou seu@estagiario.com" class="form-input" required />
+        <small class="form-hint">O papel será automaticamente detectado pelo domínio do email</small>
       </div>
       
       <div class="form-group">
-        <label for="userType">Tipo de Usuário</label>
-        <select id="userType" class="form-input form-select" onchange="AuthService.toggleOabField()">
-          <option value="">Selecione o tipo</option>
-          <option value="advogado">Advogado</option>
-          <option value="estagiario">Estagiário</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label for="email">E-mail</label>
-        <input id="email" type="email" placeholder="contato@escritorio.com" class="form-input" />
+        <label for="registerName">Nome Completo *</label>
+        <input id="registerName" type="text" placeholder="Seu nome completo" class="form-input" required />
       </div>
       
       <div class="form-group">
         <label for="phone">Telefone</label>
         <input id="phone" type="tel" placeholder="(11) 99999-9999" class="form-input" />
-      </div>
-      
-      <div class="form-group">
-        <label for="newUsername">Usuário</label>
-        <input id="newUsername" type="text" placeholder="Escolha um nome de usuário" class="form-input" />
       </div>
       
       <div class="form-group">

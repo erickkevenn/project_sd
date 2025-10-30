@@ -15,14 +15,19 @@
     </div>
     
     <div class="header__actions user-actions">
+      <button id="btnBackHome" class="btn btn--secondary btn-back-home" onclick="window.goToMainScreen && window.goToMainScreen()" title="Voltar para tela principal" style="display: none;">
+        <i class="fas fa-home"></i>
+        Início
+      </button>
       <div class="user-info">
         <i class="fas fa-user-circle"></i>
         <span id="userName">Usuário</span>
       </div>
-      <button class="btn btn--danger btn-logout" onclick="AuthService.logout()">
+      <button class="btn btn--danger btn-logout" onclick="window.AuthService && window.AuthService.logout()">
         <i class="fas fa-sign-out-alt"></i>
         Sair
       </button>
     </div>
   </div>
 </header>
+<!-- End of Header Component -->

@@ -9,81 +9,27 @@ class HearingService {
   }
 
   /**
-   * List all hearings
+   * List all hearings - redirects to dedicated page
    */
   async list() {
-    try {
-      const response = await this.api.get('/api/hearings');
-      
-      if (response.ok) {
-        const hearings = response.data.items || response.data;
-        this.showDataModal('Audiências', hearings);
-      } else {
-        this.api.handleError(response, 'Listar audiências');
-      }
-    } catch (error) {
-      this.app.handleError(error);
-    }
+    // Redirect to dedicated hearing page
+    window.location.href = '/ui/components/hearing.html';
   }
 
   /**
-   * List today's hearings
+   * List today's hearings - redirects to dedicated page with today filter
    */
   async listToday() {
-    try {
-      const response = await this.api.get('/api/hearings');
-      
-      if (response.ok) {
-        const today = new Date().toISOString().split('T')[0];
-        const hearings = response.data.items || response.data;
-        const todayHearings = hearings.filter(hearing => 
-          hearing.date && hearing.date.startsWith(today)
-        );
-        
-        this.showDataModal('Audiências de Hoje', todayHearings);
-      } else {
-        this.api.handleError(response, 'Listar audiências de hoje');
-      }
-    } catch (error) {
-      this.app.handleError(error);
-    }
+    // Redirect to dedicated hearing page with today filter
+    window.location.href = '/ui/components/hearing.html?filter=today';
   }
 
   /**
-   * Show create hearing modal
+   * Show create hearing modal - redirects to dedicated page with create modal
    */
   showCreateModal() {
-    const modal = document.getElementById('createHearingModal');
-    if (!modal) return;
-
-    // Clear form fields
-    const fields = ['hearingProcessIdInput', 'hearingCourtroomInput', 'hearingDescInput'];
-    fields.forEach(fieldId => {
-      const element = document.getElementById(fieldId);
-      if (element) element.value = '';
-    });
-
-    // Set default date to 15 days from now
-    const dateInput = document.getElementById('hearingDateInput');
-    if (dateInput) {
-      const today = new Date();
-      const futureDate = new Date(today);
-      futureDate.setDate(today.getDate() + 15);
-      dateInput.value = futureDate.toISOString().split('T')[0];
-    }
-
-    modal.style.display = 'flex';
-    document.getElementById('hearingProcessIdInput')?.focus();
-
-    // Setup enter key listener
-    const descInput = document.getElementById('hearingDescInput');
-    if (descInput) {
-      descInput.onkeypress = (e) => {
-        if (e.key === 'Enter') {
-          this.create();
-        }
-      };
-    }
+    // Redirect to dedicated hearing page with create modal open
+    window.location.href = '/ui/components/hearing.html?action=create';
   }
 
   /**

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos - JurisFlow</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/process.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Load utilities first -->
+    <script src="../js/utils.js"></script>
+    <!-- Header Placeholder -->
+    <div id="header-placeholder"></div>
+
+</head>
+
+
+<body>
+    <div class="process-container">
+        <!-- Page Header -->
+        <div class="process-header">
+            <h1 class="process-title">
+                <i class="fas fa-file-alt"></i>
+                Gerenciamento de Documentos
+            </h1>
+            <div class="process-actions">
+                <button onclick="loadAllDocuments()" class="btn btn--primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar Lista
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Label + Bar -->
+        <div class="search-label">Buscar documentos</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input search-input--small"
+                placeholder="Digite o ID, título ou autor para filtrar..." onkeyup="filterDocuments()">
+        </div>
+
+        <!-- Content Area -->
+        <div class="process-content">
+            <div id="documentListContainer">
+                <div class="status-loading">
+                    <div><i class="fas fa-circle-notch"></i></div>
+                    <div>Carregando documentos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Document Modal -->
+    <div id="createDocumentModal" class="modal">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">📄 Criar Documento</div>
+            <div class="info-text">Preencha as informações do documento:</div>
+            <input type="text" id="docTitleInput" class="modal__input" placeholder="Título do Documento" />
+            <textarea id="docContentInput" class="modal__input" placeholder="Conteúdo do Documento" rows="5"></textarea>
+            <input type="text" id="docAuthorInput" class="modal__input" placeholder="Autor do Documento" />
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeCreateDocumentModal()">Cancelar</button>
+                <button class="modal__button modal__button--primary" onclick="executeCreateDocument()">Criar Documento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Document Modal -->
+    <div id="searchDocumentModal" class="modal">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🔍 Buscar Documento</div>
+            <div class="info-text">Digite o ID do documento:</div>
+            <input type="text" id="searchDocIdInput" class="modal__input" placeholder="Ex: DOC-001" 
+                onkeypress="if(event.key==='Enter') executeSearchDocument()">
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeSearchDocumentModal()">Cancelar</button>
+                <button class="modal__button modal__button--primary" onclick="executeSearchDocument()">Buscar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Document Modal -->
+    <div id="editDocumentModal" class="modal">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">✏️ Editar Documento</div>
+            <input type="hidden" id="editDocIdInput" />
+            <input type="text" id="editDocTitleInput" class="modal__input" placeholder="Título do Documento" />
+            <textarea id="editDocContentInput" class="modal__input" placeholder="Conteúdo do Documento" rows="5"></textarea>
+            <input type="text" id="editDocAuthorInput" class="modal__input" placeholder="Autor do Documento" />
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeEditDocumentModal()">Cancelar</button>
+                <button class="modal__button modal__button--primary" onclick="executeEditDocument()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Document Modal -->
+    <div id="deleteDocumentModal" class="modal">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🗑️ Excluir Documento</div>
+            <div class="info-text">Tem certeza que deseja excluir este documento?</div>
+            <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+            <input type="hidden" id="deleteDocIdInput" />
+            <div id="deleteDocInfo" style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;"></div>
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeDeleteDocumentModal()">Cancelar</button>
+                <button class="modal__button modal__button--danger" onclick="confirmDeleteDocument()">Excluir Documento</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.protocol + '//' + window.location.host;
+        let allDocuments = [];
+
+        // API Helper
+        async function apiRequest(endpoint, options = {}) {
+            const token = localStorage.getItem('jwtToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+
+            try {
+                const response = await fetch(API_BASE_URL + endpoint, {
+                    ...options,
+                    headers: { ...headers, ...options.headers }
+                });
+
+                const data = await response.json();
+                return { ok: response.ok, status: response.status, data };
+            } catch (error) {
+                console.error('API Request failed:', error);
+                return { ok: false, error: error.message };
+            }
+        }
+
+        async function loadAllDocuments() {
+            const container = document.getElementById('documentListContainer');
+            container.innerHTML = `
+                <div class="status-loading">
+                    <div><i class="fas fa-circle-notch"></i></div>
+                    <div>Carregando documentos...</div>
+                </div>`;
+            
+            try {
+                const response = await apiRequest('/api/documents', { method: 'GET' });
+                
+                if (response.ok) {
+                    const documents = response.data || [];
+                    allDocuments = Array.isArray(documents) ? documents : [];
+                    renderDocumentTable(allDocuments);
+                } else {
+                    console.error('Erro ao carregar documentos:', response);
+                    container.innerHTML = '<div class="empty-state">Erro ao carregar documentos.</div>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar documentos:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar documentos.</div>';
+            }
+        }
+
+        function renderDocumentTable(documents) {
+            const container = document.getElementById('documentListContainer');
+            
+            if (!documents || documents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state__icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="empty-state__title">Nenhum documento encontrado</div>
+                        <div class="empty-state__text">Crie um novo documento para começar.</div>
+                    </div>`;
+                return;
+            }
+
+            let html = `
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título</th>
+                                <th>Autor</th>
+                                <th>Criado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            documents.forEach(doc => {
+                const createdDate = doc.created_at || doc.timestamp ? formatDate(doc.created_at || doc.timestamp) : 'N/A';
+                const content = doc.content ? (doc.content.length > 50 ? doc.content.substring(0, 50) + '...' : doc.content) : '-';
+                
+                // Escape for onclick - use JSON.stringify to properly escape quotes
+                const docIdEsc = (doc.id || '').replace(/'/g, "\\'");
+                const docTitleEsc = (doc.title || '').replace(/'/g, "\\'");
+                const docContentEsc = (doc.content || '').replace(/'/g, "\\'");
+                const docAuthorEsc = (doc.author || '').replace(/'/g, "\\'");
+                
+                html += `
+                    <tr>
+                        <td><strong>${escapeHtml(doc.id || 'N/A')}</strong></td>
+                        <td>${escapeHtml(doc.title || '-')}</td>
+                        <td>${escapeHtml(doc.author || '-')}</td>
+                        <td class="col-date">${createdDate}</td>
+                        <td>
+                            <button onclick="editDocument('${docIdEsc}', '${docTitleEsc}', '${docContentEsc}', '${docAuthorEsc}')" class="btn btn--secondary btn--small">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="deleteDocumentConfirm('${docIdEsc}', '${docTitleEsc}')" class="btn btn--danger btn--small">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function filterDocuments() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allDocuments.filter(d =>
+                (d.id && d.id.toLowerCase().includes(searchTerm)) ||
+                (d.title && d.title.toLowerCase().includes(searchTerm)) ||
+                (d.author && d.author.toLowerCase().includes(searchTerm))
+            );
+            renderDocumentTable(filtered);
+        }
+
+        function showCreateDocumentModal() {
+            document.getElementById('createDocumentModal').style.display = 'flex';
+            document.getElementById('docTitleInput').focus();
+        }
+
+        function closeCreateDocumentModal() {
+            document.getElementById('createDocumentModal').style.display = 'none';
+            document.getElementById('docTitleInput').value = '';
+            document.getElementById('docContentInput').value = '';
+            document.getElementById('docAuthorInput').value = '';
+        }
+
+        async function executeCreateDocument() {
+            const title = document.getElementById('docTitleInput').value.trim();
+            const content = document.getElementById('docContentInput').value.trim();
+            const author = document.getElementById('docAuthorInput').value.trim();
+
+            if (!title || !content || !author) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            closeCreateDocumentModal();
+
+            try {
+                const response = await apiRequest('/api/documents', {
+                    method: 'POST',
+                    body: JSON.stringify({ title, content, author })
+                });
+
+                if (response.ok) {
+                    alert('Documento criado com sucesso!');
+                    loadAllDocuments();
+                } else {
+                    alert(`Erro ao criar documento: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Erro ao criar documento:', error);
+                alert('Erro ao criar documento.');
+            }
+        }
+
+        function showSearchDocumentModal() {
+            document.getElementById('searchDocumentModal').style.display = 'flex';
+            document.getElementById('searchDocIdInput').focus();
+        }
+
+        function closeSearchDocumentModal() {
+            document.getElementById('searchDocumentModal').style.display = 'none';
+            document.getElementById('searchDocIdInput').value = '';
+        }
+
+        async function executeSearchDocument() {
+            const docId = document.getElementById('searchDocIdInput').value.trim();
+
+            if (!docId) {
+                alert('Por favor, informe o ID do documento.');
+                return;
+            }
+
+            closeSearchDocumentModal();
+
+            try {
+                const response = await apiRequest(`/api/documents/${docId}`, { method: 'GET' });
+
+                if (response.ok) {
+                    const doc = response.data;
+                    alert(`Documento encontrado!\n\nID: ${doc.id}\nTítulo: ${doc.title}\nAutor: ${doc.author}\nConteúdo: ${doc.content}`);
+                } else {
+                    alert(`Documento não encontrado: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar documento:', error);
+                alert('Erro ao buscar documento.');
+            }
+        }
+
+        function editDocument(id, title, content, author) {
+            document.getElementById('editDocIdInput').value = id;
+            document.getElementById('editDocTitleInput').value = title;
+            document.getElementById('editDocContentInput').value = content;
+            document.getElementById('editDocAuthorInput').value = author;
+            document.getElementById('editDocumentModal').style.display = 'flex';
+        }
+
+        function closeEditDocumentModal() {
+            document.getElementById('editDocumentModal').style.display = 'none';
+        }
+
+        async function executeEditDocument() {
+            const id = document.getElementById('editDocIdInput').value;
+            const title = document.getElementById('editDocTitleInput').value.trim();
+            const content = document.getElementById('editDocContentInput').value.trim();
+            const author = document.getElementById('editDocAuthorInput').value.trim();
+
+            if (!title || !content || !author) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            closeEditDocumentModal();
+
+            try {
+                const response = await apiRequest(`/api/documents/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ title, content, author })
+                });
+
+                if (response.ok) {
+                    alert('Documento atualizado com sucesso!');
+                    loadAllDocuments();
+                } else {
+                    alert(`Erro ao atualizar documento: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar documento:', error);
+                alert('Erro ao atualizar documento.');
+            }
+        }
+
+        function deleteDocumentConfirm(docId, docTitle) {
+            const modal = document.getElementById('deleteDocumentModal');
+            const idInput = document.getElementById('deleteDocIdInput');
+            const infoDiv = document.getElementById('deleteDocInfo');
+            
+            idInput.value = docId;
+            
+            infoDiv.innerHTML = `
+                <div style="display: grid; gap: 0.5rem;">
+                    <div><strong>ID:</strong> ${escapeHtml(docId)}</div>
+                    <div><strong>Título:</strong> ${escapeHtml(docTitle || 'N/A')}</div>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeDeleteDocumentModal() {
+            document.getElementById('deleteDocumentModal').style.display = 'none';
+        }
+
+        async function confirmDeleteDocument() {
+            const docId = document.getElementById('deleteDocIdInput').value;
+            
+            if (!docId) {
+                alert('ID do documento não encontrado.');
+                return;
+            }
+            
+            closeDeleteDocumentModal();
+            
+            try {
+                const response = await apiRequest(`/api/documents/${docId}`, { method: 'DELETE' });
+                
+                if (response.ok) {
+                    alert('Documento excluído com sucesso!');
+                    loadAllDocuments();
+                } else {
+                    alert(`Erro ao excluir documento: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Erro ao excluir documento:', error);
+                alert('Erro ao excluir documento.');
+            }
+        }
+
+        // Using escapeHtml and formatDate from utils.js
+
+        // Global function for back to home button
+        window.goToMainScreen = function() {
+            window.location.href = '/ui';
+        };
+
+        // AuthService for header logout button (standalone page compatibility)
+        window.AuthService = {
+            logout: function() {
+                if (confirm('Tem certeza que deseja sair?')) {
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/ui';
+                }
+            }
+        };
+
+        // Setup modal close handlers
+        document.getElementById('createDocumentModal')?.addEventListener('click', function (e) {
+            if (e.target === this) closeCreateDocumentModal();
+        });
+        
+        document.getElementById('searchDocumentModal')?.addEventListener('click', function (e) {
+            if (e.target === this) closeSearchDocumentModal();
+        });
+        
+        document.getElementById('editDocumentModal')?.addEventListener('click', function (e) {
+            if (e.target === this) closeEditDocumentModal();
+        });
+        
+        document.getElementById('deleteDocumentModal')?.addEventListener('click', function (e) {
+            if (e.target === this) closeDeleteDocumentModal();
+        });
+    </script>
+
+    <style>
+        .col-date {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .warning-text {
+            color: #fbbf24;
+            font-weight: 600;
+            text-align: center;
+            margin: 1rem 0;
+        }
+    </style>
+</body>
+
+</html>
+<script>
+    async function loadHeader() {
+        try {
+            const response = await fetch('header.html');
+            const html = await response.text();
+            document.getElementById('header-placeholder').innerHTML = html;
+            
+            // Show the back home button since we're in a standalone page
+            const btnBackHome = document.getElementById('btnBackHome');
+            if (btnBackHome) {
+                // Use requestAnimationFrame for smoother display
+                requestAnimationFrame(() => {
+                    btnBackHome.style.display = 'inline-flex';
+                });
+            }
+            
+            // Update username after header loads
+            await updateUserInfo();
+        } catch (error) {
+            console.error('Error loading header:', error);
+        }
+    }
+    
+    /**
+     * Update user info in header
+     */
+    async function updateUserInfo() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) return;
+        
+        try {
+            const response = await fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const userNameBox = document.getElementById('userName');
+                const officeNameBox = document.getElementById('officeName');
+                
+                if (userNameBox && data.user && data.user.username) {
+                    userNameBox.textContent = data.user.username;
+                }
+                
+                if (officeNameBox && data.user && data.user.office) {
+                    officeNameBox.textContent = data.user.office;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user info:', error);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function () {
+        await loadHeader();
+
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert('Você precisa estar autenticado para acessar esta página.');
+            window.location.href = '/ui';
+            return;
+        }
+        loadAllDocuments();
+    });
+</script>

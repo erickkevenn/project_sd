@@ -1,0 +1,83 @@
+[
+  {
+    "id": "4bd4c079",
+    "process_id": "ORCH-01",
+    "date": "2025-11-10",
+    "courtroom": "Sala 3",
+    "description": "Audiência inicial - criada via orquestração"
+  },
+  {
+    "id": "e1d4400c",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "2694b7ac",
+    "process_id": "0001",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "06b9993a",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "8d500f51",
+    "process_id": "0001",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "161f99fc",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "08372ee1",
+    "process_id": "0001",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "9a85eb1b",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "bae7ea47",
+    "process_id": "0001",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": ""
+  },
+  {
+    "id": "cd164f20",
+    "process_id": "PROC-001",
+    "date": "2025-11-14",
+    "courtroom": "dad",
+    "description": "dada",
+    "created_at": "2025-10-29T21:13:24.613837-03:00",
+    "office_id": "e91eff737ca2"
+  },
+  {
+    "id": "0e8f22ee",
+    "process_id": "H-01",
+    "date": "2025-11-01",
+    "courtroom": "Sala 2",
+    "description": "",
+    "created_at": "2025-10-29T21:50:32.487518-03:00",
+    "office_id": null
+  }
+]

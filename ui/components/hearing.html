@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audiências - JurisFlow</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/process.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Load utilities first -->
+    <script src="../js/utils.js"></script>
+    <script src="../js/modals.js" defer></script>
+    <!-- Header Placeholder -->
+    <div id="header-placeholder"></div>
+
+</head>
+
+
+<body>
+
+    <div class="process-container">
+        <!-- Page Header -->
+        <div class="process-header">
+            <h1 class="process-title">
+                <i class="fas fa-gavel"></i>
+                Organização de Audiências
+            </h1>
+            <div class="process-actions">
+                <button onclick="loadAllHearings()" class="btn btn--primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar Lista
+                </button>
+                <button onclick="filterTodayHearings()" class="btn btn--primary">
+                    <i class="fas fa-calendar-day"></i>
+                    Audiências de Hoje
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Label + Bar -->
+        <div class="search-label">Buscar audiências</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input search-input--small"
+                placeholder="Digite o ID do processo ou sala para filtrar..." onkeyup="filterHearings()">
+        </div>
+
+        <!-- Content Area -->
+        <div class="process-content">
+            <div id="hearingListContainer">
+                <div class="status-loading">
+                    <div><i class="fas fa-circle-notch"></i></div>
+                    <div>Carregando audiências...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Hearing Modal (modals.js) -->
+    <div id="createHearingModal" class="modal" onclick="closeCreateHearingModal()">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🏛️ Agendar Audiência</div>
+            <div class="info-text">Preencha as informações da audiência:</div>
+            <input type="text" id="hearingProcessIdInput" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required />
+            <input type="date" id="hearingDateInput" class="modal__input" required />
+            <input type="text" id="hearingCourtroomInput" class="modal__input" placeholder="Sala da audiência *" required />
+            <textarea id="hearingDescInput" class="modal__input" placeholder="Descrição da audiência *" rows="3" required></textarea>
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeCreateHearingModal()">Cancelar</button>
+                <button class="modal__button modal__button--primary" onclick="executeCreateHearing()">Agendar Audiência</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Hearing Modal -->
+    <div id="deleteHearingModal" class="modal" onclick="closeDeleteHearingModal()">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🗑️ Excluir Audiência</div>
+            <div class="info-text">Tem certeza que deseja excluir esta audiência?</div>
+            <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+            <input type="hidden" id="deleteHearingIdInput" />
+            <div id="deleteHearingInfo" style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;"></div>
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeDeleteHearingModal()">Cancelar</button>
+                <button class="modal__button modal__button--danger" onclick="confirmDeleteHearing()">Excluir Audiência</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.protocol + '//' + window.location.host;
+        let allHearings = [];
+
+        // API Helper
+        async function apiRequest(endpoint, options = {}) {
+            const token = localStorage.getItem('jwtToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+
+            try {
+                const response = await fetch(API_BASE_URL + endpoint, {
+                    ...options,
+                    headers: { ...headers, ...options.headers }
+                });
+
+                const data = await response.json();
+                return { ok: response.ok, status: response.status, data };
+            } catch (error) {
+                console.error('API Request failed:', error);
+                return { ok: false, error: error.message };
+            }
+        }
+
+        async function loadAllHearings() {
+            const container = document.getElementById('hearingListContainer');
+            container.innerHTML = `
+                <div class="status-loading">
+                    <div><i class="fas fa-circle-notch"></i></div>
+                    <div>Carregando audiências...</div>
+                </div>`;
+            try {
+                const response = await apiRequest('/api/hearings', { method: 'GET' });
+                
+                if (response.ok) {
+                    const hearings = response.data.items || response.data || [];
+                    allHearings = Array.isArray(hearings) ? hearings : [];
+                    renderHearingTable(allHearings);
+                } else {
+                    console.error('Erro ao carregar audiências:', response);
+                    container.innerHTML = '<div class="empty-state">Erro ao carregar audiências.</div>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar audiências:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar audiências.</div>';
+            }
+        }
+
+        function renderHearingTable(hearings) {
+            const container = document.getElementById('hearingListContainer');
+            if (!hearings.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state__icon"><i class="fas fa-gavel"></i></div>
+                        <div class="empty-state__title">Nenhuma audiência encontrada</div>
+                        <div class="empty-state__text">Agende uma nova audiência para começar.</div>
+                    </div>`;
+                return;
+            }
+            let html = `
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Processo</th>
+                                <th>Data</th>
+                                <th>Sala</th>
+                                <th>Descrição</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            hearings.forEach(hearing => {
+                const date = hearing.date ? formatDate(hearing.date, false) : 'N/A';
+                const idEsc = (hearing.id || '').replace(/'/g, "\\'");
+                const processIdEsc = (hearing.process_id || '').replace(/'/g, "\\'");
+                const dateEsc = (hearing.date || '').replace(/'/g, "\\'");
+                const courtroomEsc = (hearing.courtroom || '').replace(/'/g, "\\'");
+                const descriptionEsc = (hearing.description || '').replace(/'/g, "\\'");
+                
+                html += `
+                    <tr>
+                        <td><strong>${escapeHtml(hearing.id || 'N/A')}</strong></td>
+                        <td>${escapeHtml(hearing.process_id || '-')}</td>
+                        <td class="col-date">${date}</td>
+                        <td>${escapeHtml(hearing.courtroom || '-')}</td>
+                        <td>${escapeHtml(hearing.description || '-')}</td>
+                        <td>
+                            <button onclick="deleteHearingConfirm('${idEsc}', '${processIdEsc}', '${dateEsc}', '${courtroomEsc}', '${descriptionEsc}')" class="btn btn--danger btn--small">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function filterHearings() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allHearings.filter(h =>
+                (h.process_id && h.process_id.toLowerCase().includes(searchTerm)) ||
+                (h.courtroom && h.courtroom.toLowerCase().includes(searchTerm))
+            );
+            renderHearingTable(filtered);
+        }
+
+        function filterTodayHearings() {
+            const today = new Date().toISOString().split('T')[0];
+            const filtered = allHearings.filter(h => h.date && h.date.startsWith(today));
+            renderHearingTable(filtered);
+        }
+
+        function deleteHearingConfirm(hearingId, processId, date, courtroom, description) {
+            const modal = document.getElementById('deleteHearingModal');
+            const idInput = document.getElementById('deleteHearingIdInput');
+            const infoDiv = document.getElementById('deleteHearingInfo');
+            
+            idInput.value = hearingId;
+            
+            const formattedDate = date ? formatDate(date, false) : 'N/A';
+            
+            infoDiv.innerHTML = `
+                <div style="display: grid; gap: 0.5rem;">
+                    <div><strong>ID:</strong> ${escapeHtml(hearingId)}</div>
+                    <div><strong>Processo:</strong> ${escapeHtml(processId || 'N/A')}</div>
+                    <div><strong>Data:</strong> ${formattedDate}</div>
+                    <div><strong>Sala:</strong> ${escapeHtml(courtroom || 'N/A')}</div>
+                    <div><strong>Descrição:</strong> ${escapeHtml(description || 'N/A')}</div>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeDeleteHearingModal() {
+            document.getElementById('deleteHearingModal').style.display = 'none';
+        }
+
+        async function confirmDeleteHearing() {
+            const hearingId = document.getElementById('deleteHearingIdInput').value;
+            
+            if (!hearingId) {
+                alert('ID da audiência não encontrado.');
+                return;
+            }
+            
+            closeDeleteHearingModal();
+            
+            try {
+                const response = await apiRequest(`/api/hearings/${hearingId}`, { method: 'DELETE' });
+                
+                if (response.ok) {
+                    alert('Audiência excluída com sucesso!');
+                    loadAllHearings();
+                } else {
+                    alert(`Erro ao excluir audiência: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Erro ao excluir audiência:', error);
+                alert('Erro ao excluir audiência.');
+            }
+        }
+
+        function showCreateHearingModal() {
+            const modal = document.getElementById('createHearingModal');
+            if (!modal) return;
+
+            // Clear form fields
+            const fields = ['hearingProcessIdInput', 'hearingCourtroomInput', 'hearingDescInput'];
+            fields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) element.value = '';
+            });
+
+            // Set default date to 15 days from now
+            const dateInput = document.getElementById('hearingDateInput');
+            if (dateInput) {
+                const today = new Date();
+                const futureDate = new Date(today);
+                futureDate.setDate(today.getDate() + 15);
+                dateInput.value = futureDate.toISOString().split('T')[0];
+            }
+
+            modal.style.display = 'flex';
+            document.getElementById('hearingProcessIdInput')?.focus();
+        }
+
+        function closeCreateHearingModal() {
+            document.getElementById('createHearingModal').style.display = 'none';
+        }
+
+        async function executeCreateHearing() {
+            const processId = document.getElementById('hearingProcessIdInput')?.value?.trim();
+            const date = document.getElementById('hearingDateInput')?.value;
+            const courtroom = document.getElementById('hearingCourtroomInput')?.value?.trim();
+            const description = document.getElementById('hearingDescInput')?.value?.trim();
+
+            // Validate required fields
+            if (!processId) {
+                alert('⚠️ Por favor, selecione um processo.\n\nAudiências devem estar associadas a um processo existente.');
+                return;
+            }
+
+            if (!date || !courtroom || !description) {
+                alert('Por favor, preencha todos os campos obrigatórios (data, sala e descrição).');
+                return;
+            }
+
+            closeCreateHearingModal();
+
+            try {
+                const response = await apiRequest('/api/hearings', {
+                    method: 'POST',
+                    body: JSON.stringify({ process_id: processId, date, courtroom, description })
+                });
+
+                if (response.ok) {
+                    alert(`✅ Audiência agendada com sucesso!\n\nProcesso: ${processId}\nData: ${date}\nSala: ${courtroom}`);
+                    loadAllHearings();
+                } else {
+                    alert(`Erro ao agendar audiência: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Erro ao agendar audiência:', error);
+                alert('Erro ao agendar audiência.');
+            }
+        }
+
+        // Using escapeHtml and formatDate from utils.js
+
+        // Global function for back to home button
+        window.goToMainScreen = function() {
+            window.location.href = '/ui';
+        };
+
+        // AuthService for header logout button (standalone page compatibility)
+        window.AuthService = {
+            logout: function() {
+                if (confirm('Tem certeza que deseja sair?')) {
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/ui';
+                }
+            }
+        };
+    </script>
+
+    <style>
+        .col-date {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .warning-text {
+            color: #fbbf24;
+            font-weight: 600;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .info-text {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</body>
+
+</html>
+<script>
+    async function loadHeader() {
+        try {
+            const response = await fetch('header.html');
+            const html = await response.text();
+            document.getElementById('header-placeholder').innerHTML = html;
+            
+            // Show the back home button since we're in a standalone page
+            const btnBackHome = document.getElementById('btnBackHome');
+            if (btnBackHome) {
+                // Use requestAnimationFrame for smoother display
+                requestAnimationFrame(() => {
+                    btnBackHome.style.display = 'inline-flex';
+                });
+            }
+            
+            // Update username after header loads
+            await updateUserInfo();
+        } catch (error) {
+            console.error('Error loading header:', error);
+        }
+    }
+    
+    /**
+     * Update user info in header
+     */
+    async function updateUserInfo() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) return;
+        
+        try {
+            const response = await fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const userNameBox = document.getElementById('userName');
+                const officeNameBox = document.getElementById('officeName');
+                
+                if (userNameBox && data.user && data.user.username) {
+                    userNameBox.textContent = data.user.username;
+                }
+                
+                if (officeNameBox && data.user && data.user.office) {
+                    officeNameBox.textContent = data.user.office;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user info:', error);
+        }
+    }
+    
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadHeader();
+
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                alert('Você precisa estar autenticado para acessar esta página.');
+                window.location.href = '/ui';
+                return;
+            }
+            
+            // Load hearings first
+            await loadAllHearings();
+            
+            // Check URL parameters for actions
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Check if should filter by today
+            if (urlParams.get('filter') === 'today') {
+                filterTodayHearings();
+            }
+            
+            // Check if should open create modal
+            if (urlParams.get('action') === 'create') {
+                showCreateHearingModal();
+            }
+        });
+</script>

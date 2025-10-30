@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processos - JurisFlow</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/process.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Load utilities first -->
+    <script src="../js/utils.js"></script>
+    <!-- Header Placeholder -->
+    <div id="header-placeholder"></div>
+
+</head>
+
+
+<body>
+    <div class="process-container">
+        <!-- Page Header -->
+        <div class="process-header">
+            <h1 class="process-title">
+                <i class="fas fa-folder-open"></i>
+                Gerenciamento de Processos
+            </h1>
+            <div class="process-actions">
+                <button onclick="loadAllProcesses()" class="btn btn--primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar Lista
+                </button>
+                <button onclick="orchestrateCase()" class="btn btn--primary">
+                    <i class="fas fa-magic"></i>
+                    Orquestrar Caso
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Label + Bar -->
+        <div class="search-label">Buscar processos</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input search-input--small"
+                placeholder="Digite o ID ou nome do processo para filtrar..." onkeyup="filterProcesses()">
+        </div>
+
+        <!-- Content Area -->
+        <div class="process-content">
+            <div id="processListContainer">
+                <div class="status-loading">
+                    <div><i class="fas fa-circle-notch"></i></div>
+                    <div>Carregando processos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="processSearchModal" class="modal">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🔍 Buscar Processo</div>
+            <div class="info-text">Digite o ID do processo para ver o resumo completo:</div>
+            <input type="text" id="processIdInput" class="modal__input" placeholder="Ex: PROC-001, UI-01"
+                onkeypress="if(event.key==='Enter') searchProcess()">
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeSearchModal()">Cancelar</button>
+                <button class="modal__button modal__button--primary" onclick="searchProcess()">Buscar Resumo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Details Modal -->
+    <div id="processDetailsModal" class="modal">
+        <div class="modal__content modal__content--large" onclick="event.stopPropagation()">
+            <div class="modal__header modal__header--large">
+                <h3 id="processDetailsTitle" class="modal__title">Detalhes do Processo</h3>
+                <button class="modal__close" onclick="closeDetailsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal__body">
+                <div id="processDetailsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Process Modal -->
+    <div id="deleteProcessModal" class="modal" onclick="closeDeleteProcessModal()">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🗑️ Excluir Processo</div>
+            <div class="info-text">Tem certeza que deseja excluir este processo?</div>
+            <input type="hidden" id="deleteProcessIdInput" />
+            <div id="deleteProcessInfo" style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px;"></div>
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeDeleteProcessModal()">Cancelar</button>
+                <button class="modal__button modal__button--danger" onclick="confirmDeleteProcess()">Excluir Processo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const API_BASE_URL = window.location.protocol + '//' + window.location.host;
+        let allProcesses = [];
+
+        // API Helper
+        async function apiRequest(endpoint, options = {}) {
+            const token = localStorage.getItem('jwtToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+
+            try {
+                const response = await fetch(API_BASE_URL + endpoint, {
+                    ...options,
+                    headers: { ...headers, ...options.headers }
+                });
+
+                const data = await response.json();
+                return { ok: response.ok, status: response.status, data };
+            } catch (error) {
+                console.error('API Request failed:', error);
+                return { ok: false, error: error.message };
+            }
+        }
+
+        // Load all processes
+        async function loadAllProcesses() {
+            const container = document.getElementById('processListContainer');
+            container.innerHTML = '<div class="status-loading"><div><i class="fas fa-circle-notch"></i></div><div>Carregando processos...</div></div>';
+
+            try {
+                    // Get data from all services to find unique process IDs
+                    const [docsRes, deadlinesRes, hearingsRes] = await Promise.all([
+                        apiRequest('/api/documents'),
+                        apiRequest('/api/deadlines'),
+                        apiRequest('/api/hearings')
+                    ]);
+
+                const processMap = new Map();
+
+                // Collect process IDs and creation dates from documents
+                if (docsRes.ok && Array.isArray(docsRes.data)) {
+                    docsRes.data.forEach(doc => {
+                        if (doc.process_id) {
+                            if (!processMap.has(doc.process_id)) {
+                                processMap.set(doc.process_id, {
+                                    id: doc.process_id,
+                                    name: `Processo ${doc.process_id}`,
+                                    created_at: doc.created_at || doc.timestamp || null
+                                });
+                            } else {
+                                // Update if this document has an earlier date
+                                const existing = processMap.get(doc.process_id);
+                                const docDate = doc.created_at || doc.timestamp;
+                                if (docDate && (!existing.created_at || new Date(docDate) < new Date(existing.created_at))) {
+                                    existing.created_at = docDate;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Collect process IDs from deadlines
+                if (deadlinesRes.ok && Array.isArray(deadlinesRes.data)) {
+                    deadlinesRes.data.forEach(deadline => {
+                        if (deadline.process_id) {
+                            if (!processMap.has(deadline.process_id)) {
+                                processMap.set(deadline.process_id, {
+                                    id: deadline.process_id,
+                                    name: `Processo ${deadline.process_id}`,
+                                    created_at: deadline.created_at || null
+                                });
+                            } else {
+                                const existing = processMap.get(deadline.process_id);
+                                const deadlineDate = deadline.created_at;
+                                if (deadlineDate && (!existing.created_at || new Date(deadlineDate) < new Date(existing.created_at))) {
+                                    existing.created_at = deadlineDate;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Collect process IDs from hearings
+                if (hearingsRes.ok) {
+                    const hearings = hearingsRes.data.items || hearingsRes.data;
+                    if (Array.isArray(hearings)) {
+                        hearings.forEach(hearing => {
+                            if (hearing.process_id) {
+                                if (!processMap.has(hearing.process_id)) {
+                                    processMap.set(hearing.process_id, {
+                                        id: hearing.process_id,
+                                        name: `Processo ${hearing.process_id}`,
+                                        created_at: hearing.created_at || null
+                                    });
+                                } else {
+                                    const existing = processMap.get(hearing.process_id);
+                                    const hearingDate = hearing.created_at;
+                                    if (hearingDate && (!existing.created_at || new Date(hearingDate) < new Date(existing.created_at))) {
+                                        existing.created_at = hearingDate;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                allProcesses = Array.from(processMap.values());
+
+                // Also include explicit processes returned by the /api/processes endpoint
+                try {
+                    const processesRes = await apiRequest('/api/processes');
+                    if (processesRes.ok && Array.isArray(processesRes.data)) {
+                        processesRes.data.forEach(p => {
+                            const id = p.number || p.id || p.process_id;
+                            if (!id) return;
+                            if (!processMap.has(id)) {
+                                processMap.set(id, {
+                                    id,
+                                    api_id: p.id || null,
+                                    name: p.title || p.name || `Processo ${id}`,
+                                    created_at: p.created_at || null
+                                });
+                            } else {
+                                // if already present, ensure we attach api_id when available
+                                const existing = processMap.get(id);
+                                if (!existing.api_id && p.id) existing.api_id = p.id;
+                            }
+                        });
+
+                        allProcesses = Array.from(processMap.values());
+                    }
+                } catch (e) {
+                    console.warn('Could not fetch /api/processes:', e);
+                }
+
+                renderProcessTable(allProcesses);
+            } catch (error) {
+                console.error('Error loading processes:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar processos.</div>';
+            }
+        }
+
+        // Render process table
+        function renderProcessTable(processes) {
+            const container = document.getElementById('processListContainer');
+
+            if (!processes || processes.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state__icon"><i class="fas fa-folder-open"></i></div><div class="empty-state__title">Nenhum processo encontrado</div><div class="empty-state__text">Comece criando documentos, prazos ou audiências vinculados a processos.</div></div>';
+                return;
+            }
+
+            // Verificar permissões do usuário
+            const token = localStorage.getItem('jwtToken');
+            let userPermissions = [];
+            
+            // Decodificar JWT para pegar permissões (simples parse do payload)
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    userPermissions = payload.permissions || [];
+                } catch (e) {
+                    console.warn('Could not decode token:', e);
+                }
+            }
+            
+            const canDelete = userPermissions.includes('delete');
+
+            let html = '<div class="data-table-container"><table class="data-table">';
+            html += '<thead><tr><th>ID do Processo</th><th>Nome</th><th>Criado em</th><th>Ações</th></tr></thead>';
+            html += '<tbody>';
+
+            processes.forEach(process => {
+                const createdDate = process.created_at ? formatDate(process.created_at) : '<span style="color: #94a3b8;">Data não disponível</span>';
+                // use api_id for deletion if available (backend may expect internal id), but display the public id
+                const deleteTarget = process.api_id || process.id;
+                
+                let actionsHtml = `<button onclick="viewProcessDetails('${escapeHtml(process.id)}')" class="btn btn--secondary" style="padding: 0.5rem 1rem;">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </button>`;
+                
+                // Só adiciona botão de excluir se o usuário tiver permissão
+                if (canDelete) {
+                    actionsHtml += `
+                        <button onclick="deleteProcessConfirm('${escapeHtml(deleteTarget)}','${escapeHtml(process.id)}')" class="btn btn--danger" style="padding: 0.5rem 1rem; margin-left:0.5rem;">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>`;
+                }
+                
+                html += `<tr>
+                    <td><strong>${escapeHtml(process.id)}</strong></td>
+                    <td>${escapeHtml(process.name)}</td>
+                    <td class="col-date">${createdDate}</td>
+                    <td>${actionsHtml}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Filter processes
+        function filterProcesses() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allProcesses.filter(p =>
+                p.id.toLowerCase().includes(searchTerm) ||
+                p.name.toLowerCase().includes(searchTerm)
+            );
+            renderProcessTable(filtered);
+        }
+
+        // View process details
+        async function viewProcessDetails(processId) {
+            try {
+                const response = await apiRequest(`/api/process/${processId}/summary`);
+
+                if (response.ok) {
+                    showProcessDetailsModal(processId, response.data);
+                } else {
+                    alert(`Erro ao buscar detalhes do processo: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Error viewing process details:', error);
+                alert('Erro ao buscar detalhes do processo.');
+            }
+        }
+
+        // Show process details in a nice modal
+        function showProcessDetailsModal(processId, data) {
+            const modal = document.getElementById('processDetailsModal');
+            const title = document.getElementById('processDetailsTitle');
+            const content = document.getElementById('processDetailsContent');
+
+            if (!modal || !title || !content) {
+                console.error('Required modal elements not found');
+                return;
+            }
+
+            const escapeHtml = window.Utils?.escapeHtml || ((text) => String(text).replace(/[&<>"']/g, ''));
+            
+            title.innerHTML = `<i class="fas fa-folder-open"></i> Detalhes do Processo ${escapeHtml(processId)}`;
+
+            // Use utility function to render if available
+            if (window.Utils && window.Utils.renderProcessSummary) {
+                content.innerHTML = window.Utils.renderProcessSummary(processId, data);
+            } else {
+                // Fallback to basic display
+                content.innerHTML = '<p>Erro: Funções de utilitário não carregadas.</p>';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        // Close details modal
+        function closeDetailsModal() {
+            const modal = document.getElementById('processDetailsModal');
+            modal.style.display = 'none';
+        }
+
+        // Delete process confirmation flow
+        function deleteProcessConfirm(apiId, displayId) {
+            const modal = document.getElementById('deleteProcessModal');
+            const idInput = document.getElementById('deleteProcessIdInput');
+            const infoDiv = document.getElementById('deleteProcessInfo');
+
+            // store the API id (internal identifier) for deletion; if apiId is null, fallback to displayId
+            idInput.value = apiId || displayId;
+            infoDiv.innerHTML = `<div><strong>ID público:</strong> ${escapeHtml(displayId)}</div><div style="margin-top: 0.5rem; color: #94a3b8;"><small>(usando identificador interno: ${escapeHtml(apiId || displayId)})</small></div>`;
+            modal.style.display = 'flex';
+        }
+
+        function closeDeleteProcessModal() {
+            const modal = document.getElementById('deleteProcessModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function confirmDeleteProcess() {
+            const id = document.getElementById('deleteProcessIdInput')?.value;
+            if (!id) {
+                alert('ID do processo não encontrado.');
+                return;
+            }
+
+            closeDeleteProcessModal();
+
+            try {
+                let response = await apiRequest(`/api/processes/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Processo excluído com sucesso.');
+                    loadAllProcesses();
+                    return;
+                }
+
+                // If not found, try to resolve by searching /api/processes for a matching number and retry
+                const status = response.status;
+                const msg = (response.data && (response.data.error || response.data.message)) || 'Erro desconhecido';
+
+                if (status === 404) {
+                    // attempt to find a process with number equal to the id we tried
+                    const listResp = await apiRequest('/api/processes');
+                    if (listResp.ok && Array.isArray(listResp.data)) {
+                        const candidate = listResp.data.find(p => (p.id === id) || (p.number === id) || (p.process_id === id));
+                        if (candidate && (candidate.id && candidate.id !== id)) {
+                            // retry delete using the canonical internal id
+                            const retryResp = await apiRequest(`/api/processes/${encodeURIComponent(candidate.id)}`, { method: 'DELETE' });
+                            if (retryResp.ok) {
+                                alert('Processo excluído com sucesso (identificador interno).');
+                                loadAllProcesses();
+                                return;
+                            } else {
+                                alert(`Erro ao excluir processo após resolver identificador: ${retryResp.data?.error || retryResp.data?.message || 'Erro desconhecido'}`);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // fallback: show original message
+                alert(`Erro ao excluir processo: ${msg}`);
+            } catch (e) {
+                console.error('Error deleting process:', e);
+                alert('Erro ao excluir processo.');
+            }
+        }
+
+        // Show search modal
+        function showSearchModal() {
+            const modal = document.getElementById('processSearchModal');
+            modal.style.display = 'flex';
+            const input = document.getElementById('processIdInput');
+            if (input) input.focus();
+        }
+
+        // Close search modal
+        function closeSearchModal() {
+            const modal = document.getElementById('processSearchModal');
+            modal.style.display = 'none';
+            const input = document.getElementById('processIdInput');
+            if (input) input.value = '';
+        }
+
+        // Search process
+        async function searchProcess() {
+            const processIdInput = document.getElementById('processIdInput');
+            const processId = processIdInput?.value?.trim();
+            
+            closeSearchModal();
+
+            // Validate using utility function if available
+            const validation = window.Utils ? 
+                window.Utils.validateProcessId(processId) : 
+                { valid: !!processId, value: processId, error: 'Por favor, informe o ID do processo.' };
+            
+            if (!validation.valid) {
+                alert(validation.error);
+                return;
+            }
+
+            await viewProcessDetails(validation.value);
+        }
+
+        // Orchestrate case
+        async function orchestrateCase() {
+            if (!confirm('Deseja criar um novo caso orquestrado? Isso criará automaticamente um documento, prazo e audiência para o processo ORCH-01.')) {
+                return;
+            }
+
+            const today = new Date();
+            const deadlineDate = new Date(today);
+            deadlineDate.setDate(today.getDate() + 30);
+            const hearingDate = new Date(today);
+            hearingDate.setDate(today.getDate() + 15);
+
+            const orchestrationData = {
+                document: {
+                    title: 'Petição Inicial via Orquestração',
+                    content: 'Documento criado através da funcionalidade de orquestração automática.',
+                    author: 'Sistema'
+                },
+                deadline: {
+                    process_id: 'ORCH-01',
+                    due_date: deadlineDate.toISOString().split('T')[0],
+                    description: 'Prazo para resposta - criado via orquestração'
+                },
+                hearing: {
+                    process_id: 'ORCH-01',
+                    date: hearingDate.toISOString().split('T')[0],
+                    courtroom: 'Sala 3',
+                    description: 'Audiência inicial - criada via orquestração'
+                }
+            };
+
+            try {
+                const response = await apiRequest('/api/orchestrate/file-case', {
+                    method: 'POST',
+                    body: JSON.stringify(orchestrationData)
+                });
+
+                if (response.ok) {
+                    alert('Caso orquestrado com sucesso! Atualizando lista...');
+                    loadAllProcesses();
+                } else {
+                    alert(`Erro ao orquestrar caso: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Error orchestrating case:', error);
+                alert('Erro ao orquestrar caso.');
+            }
+        }
+
+        // Setup modal close handlers using utility
+        if (window.Utils && window.Utils.setupModalCloseHandler) {
+            window.Utils.setupModalCloseHandler('processSearchModal', closeSearchModal);
+            window.Utils.setupModalCloseHandler('processDetailsModal', closeDetailsModal);
+        } else {
+            // Fallback to manual setup
+            document.getElementById('processSearchModal')?.addEventListener('click', function (e) {
+                if (e.target === this) closeSearchModal();
+            });
+            
+            document.getElementById('processDetailsModal')?.addEventListener('click', function (e) {
+                if (e.target === this) closeDetailsModal();
+            });
+            
+            document.getElementById('deleteProcessModal')?.addEventListener('click', function (e) {
+                if (e.target === this) closeDeleteProcessModal();
+            });
+        }
+
+        // Global function for back to home button
+        window.goToMainScreen = function() {
+            window.location.href = '/ui';
+        };
+
+        // AuthService for header logout button (standalone page compatibility)
+        window.AuthService = {
+            logout: function() {
+                if (confirm('Tem certeza que deseja sair?')) {
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/ui';
+                }
+            }
+        };
+    </script>
+</body>
+
+</html>
+<script>
+    async function loadHeader() {
+        try {
+            const response = await fetch('header.html');
+            const html = await response.text();
+            document.getElementById('header-placeholder').innerHTML = html;
+            
+            // Show the back home button since we're in a standalone page
+            const btnBackHome = document.getElementById('btnBackHome');
+            if (btnBackHome) {
+                // Use requestAnimationFrame for smoother display
+                requestAnimationFrame(() => {
+                    btnBackHome.style.display = 'inline-flex';
+                });
+            }
+            
+            // Update username after header loads
+            await updateUserInfo();
+        } catch (error) {
+            console.error('Error loading header:', error);
+        }
+    }
+    
+    /**
+     * Update user info in header
+     */
+    async function updateUserInfo() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) return;
+        
+        try {
+            const response = await fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const userNameBox = document.getElementById('userName');
+                const officeNameBox = document.getElementById('officeName');
+                
+                if (userNameBox && data.user && data.user.username) {
+                    userNameBox.textContent = data.user.username;
+                }
+                
+                if (officeNameBox && data.user && data.user.office) {
+                    officeNameBox.textContent = data.user.office;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user info:', error);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function () {
+        await loadHeader();
+
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert('Você precisa estar autenticado para acessar esta página.');
+            window.location.href = '/ui';
+            return;
+        }
+        loadAllProcesses();
+    });
+</script>

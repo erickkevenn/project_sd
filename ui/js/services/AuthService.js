@@ -9,15 +9,21 @@ class AuthService {
   }
 
   /**
-   * User login
+   * User login usando EMAIL
    */
   async login() {
-    const username = document.getElementById('username')?.value?.trim();
+    const email = document.getElementById('email')?.value?.trim();
     const password = document.getElementById('password')?.value?.trim();
     const statusElement = document.getElementById('loginStatus');
 
-    if (!username || !password) {
-      this.showStatus(statusElement, 'Por favor, preencha usuário e senha.', 'error');
+    if (!email || !password) {
+      this.showStatus(statusElement, 'Por favor, preencha email e senha.', 'error');
+      return;
+    }
+
+    // Validar formato de email
+    if (!email.includes('@')) {
+      this.showStatus(statusElement, 'Por favor, digite um email válido.', 'error');
       return;
     }
 
@@ -25,7 +31,7 @@ class AuthService {
       this.showStatus(statusElement, 'Entrando...', 'loading');
       
       const response = await this.api.post('/api/auth/login', {
-        username,
+        email,
         password
       });
 
@@ -46,7 +52,8 @@ class AuthService {
   }
 
   /**
-   * User registration
+   * User registration usando EMAIL
+   * O papel é automaticamente detectado pelo domínio (@admin.com, @advogado.com, @estagiario.com)
    */
   async register() {
     const formData = this.getRegistrationData();
@@ -61,18 +68,34 @@ class AuthService {
 
     try {
       this.showStatus(statusElement, 'Cadastrando...', 'loading');
-      
-      // Simulate registration (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
+      // Monta payload para criação de usuário (papel detectado automaticamente pelo domínio)
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        office_name: formData.officeName,
+        cnpj: formData.cnpj,
+        responsible_name: formData.responsibleName,
+        phone: formData.phone
+      };
+
+      const resp = await this.api.post('/api/auth/register', payload);
+
+      if (!resp.ok) {
+        this.api.handleError(resp, 'Cadastro');
+        return;
+      }
+
       this.showStatus(statusElement, 'Cadastro realizado com sucesso! Redirecionando...', 'success');
-      
+
       setTimeout(() => {
         this.app.navigateTo('login');
-        document.getElementById('username').value = formData.username;
+        const emailInput = document.getElementById('email');
+        if (emailInput) emailInput.value = formData.email;
         this.showStatus(document.getElementById('loginStatus'), 'Cadastro concluído! Faça login com suas credenciais.', 'success');
-      }, 2000);
-      
+      }, 800);
+
     } catch (error) {
       this.showStatus(statusElement, error.message, 'error');
     }
@@ -86,31 +109,6 @@ class AuthService {
     this.app.navigateTo('landing');
   }
 
-  /**
-   * Toggle OAB field visibility based on user type
-   */
-  toggleOabField() {
-    const userType = document.getElementById('userType')?.value;
-    const oabGroup = document.getElementById('oabNumber')?.parentElement;
-    const oabInput = document.getElementById('oabNumber');
-    const oabLabel = oabGroup?.querySelector('label');
-
-    if (!oabGroup || !oabInput || !oabLabel) return;
-
-    if (userType === 'estagiario') {
-      oabGroup.classList.add('hidden');
-      oabInput.value = '';
-      oabInput.removeAttribute('required');
-    } else if (userType === 'advogado') {
-      oabGroup.classList.remove('hidden');
-      oabInput.setAttribute('required', 'required');
-      oabLabel.textContent = 'Número da OAB *';
-    } else {
-      oabGroup.classList.remove('hidden');
-      oabInput.removeAttribute('required');
-      oabLabel.textContent = 'Número da OAB';
-    }
-  }
 
   /**
    * Get registration form data
@@ -121,11 +119,9 @@ class AuthService {
       officeName: document.getElementById('officeName')?.value?.trim() || '',
       cnpj: document.getElementById('cnpj')?.value?.trim() || '',
       responsibleName: document.getElementById('responsibleName')?.value?.trim() || '',
-      oabNumber: document.getElementById('oabNumber')?.value?.trim() || '',
-      userType: document.getElementById('userType')?.value || '',
-      email: document.getElementById('email')?.value?.trim() || '',
+      email: document.getElementById('registerEmail')?.value?.trim() || '',
+      name: document.getElementById('registerName')?.value?.trim() || '',
       phone: document.getElementById('phone')?.value?.trim() || '',
-      username: document.getElementById('newUsername')?.value?.trim() || '',
       password: document.getElementById('newPassword')?.value || '',
       confirmPassword: document.getElementById('confirmPassword')?.value || '',
       acceptTerms: document.getElementById('acceptTerms')?.checked || false
@@ -138,7 +134,7 @@ class AuthService {
    * @returns {Object} Validation result
    */
   validateRegistration(data) {
-    const requiredFields = ['officeName', 'cnpj', 'responsibleName', 'userType', 'email', 'phone', 'username', 'password'];
+    const requiredFields = ['officeName', 'cnpj', 'responsibleName', 'email', 'name', 'phone', 'password'];
     
     for (const field of requiredFields) {
       if (!data[field]) {
@@ -149,10 +145,21 @@ class AuthService {
       }
     }
 
-    if (data.userType === 'advogado' && !data.oabNumber) {
+    // Validar formato de email
+    if (!data.email.includes('@') || !data.email.includes('.')) {
       return {
         valid: false,
-        message: 'Número da OAB é obrigatório para advogados.'
+        message: 'Por favor, digite um email válido.'
+      };
+    }
+
+    // Validar domínio permitido
+    const allowedDomains = ['@admin.com', '@advogado.com', '@estagiario.com'];
+    const hasValidDomain = allowedDomains.some(domain => data.email.endsWith(domain));
+    if (!hasValidDomain) {
+      return {
+        valid: false,
+        message: 'Email deve ter domínio @admin.com, @advogado.com ou @estagiario.com'
       };
     }
 
@@ -163,10 +170,10 @@ class AuthService {
       };
     }
 
-    if (data.password.length < 8) {
+    if (data.password.length < 6) {
       return {
         valid: false,
-        message: 'A senha deve ter pelo menos 8 caracteres.'
+        message: 'A senha deve ter pelo menos 6 caracteres.'
       };
     }
 

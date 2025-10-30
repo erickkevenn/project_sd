@@ -30,10 +30,10 @@
   <div class="modal__content" onclick="event.stopPropagation()">
     <div class="modal__header">📄 Criar Documento</div>
     <div class="info-text">Preencha as informações do documento:</div>
-    <input type="text" id="docTitleInput" class="modal__input" placeholder="Título do documento" />
-    <textarea id="docContentInput" class="modal__input" placeholder="Conteúdo do documento" rows="4"></textarea>
-    <input type="text" id="docAuthorInput" class="modal__input" placeholder="Autor" />
-    <input type="text" id="docProcessIdInput" class="modal__input" placeholder="ID do Processo (opcional)" />
+    <input type="text" id="docProcessIdInput" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required />
+    <input type="text" id="docTitleInput" class="modal__input" placeholder="Título do documento *" required />
+    <textarea id="docContentInput" class="modal__input" placeholder="Conteúdo do documento *" rows="4" required></textarea>
+    <input type="text" id="docAuthorInput" class="modal__input" placeholder="Autor *" required />
     <div class="modal__buttons">
       <button class="modal__button modal__button--secondary" onclick="DocumentService.closeCreateModal()">Cancelar</button>
       <button class="modal__button modal__button--primary" onclick="DocumentService.create()">Criar Documento</button>
@@ -46,9 +46,9 @@
   <div class="modal__content" onclick="event.stopPropagation()">
     <div class="modal__header">⏰ Criar Prazo</div>
     <div class="info-text">Preencha as informações do prazo:</div>
-    <input type="text" id="deadlineProcessIdInput" class="modal__input" placeholder="ID do Processo" />
-    <input type="date" id="deadlineDateInput" class="modal__input" />
-    <textarea id="deadlineDescInput" class="modal__input" placeholder="Descrição do prazo" rows="3"></textarea>
+    <input type="text" id="deadlineProcessIdInput" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required />
+    <input type="date" id="deadlineDateInput" class="modal__input" required />
+    <textarea id="deadlineDescInput" class="modal__input" placeholder="Descrição do prazo *" rows="3" required></textarea>
     <div class="modal__buttons">
       <button class="modal__button modal__button--secondary" onclick="DeadlineService.closeCreateModal()">Cancelar</button>
       <button class="modal__button modal__button--primary" onclick="DeadlineService.create()">Criar Prazo</button>
@@ -61,10 +61,10 @@
   <div class="modal__content" onclick="event.stopPropagation()">
     <div class="modal__header">🏛️ Agendar Audiência</div>
     <div class="info-text">Preencha as informações da audiência:</div>
-    <input type="text" id="hearingProcessIdInput" class="modal__input" placeholder="ID do Processo" />
-    <input type="date" id="hearingDateInput" class="modal__input" />
-    <input type="text" id="hearingCourtroomInput" class="modal__input" placeholder="Sala da audiência" />
-    <textarea id="hearingDescInput" class="modal__input" placeholder="Descrição da audiência" rows="3"></textarea>
+    <input type="text" id="hearingProcessIdInput" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required />
+    <input type="date" id="hearingDateInput" class="modal__input" required />
+    <input type="text" id="hearingCourtroomInput" class="modal__input" placeholder="Sala da audiência *" required />
+    <textarea id="hearingDescInput" class="modal__input" placeholder="Descrição da audiência *" rows="3" required></textarea>
     <div class="modal__buttons">
       <button class="modal__button modal__button--secondary" onclick="HearingService.closeCreateModal()">Cancelar</button>
       <button class="modal__button modal__button--primary" onclick="HearingService.create()">Agendar Audiência</button>
@@ -145,3 +145,28 @@
     </div>
   </div>
 </div>
+
+<!-- Generic Message Modal (centralized alerts) -->
+<div id="messageModal" class="modal" style="display: none;" onclick="(window.App && App.closeMessage && App.closeMessage())">
+  <div class="modal__content" onclick="event.stopPropagation()">
+    <div id="messageModalHeader" class="modal__header" style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <span id="messageModalIcon" aria-hidden="true">ℹ️</span>
+        <h3 id="messageModalTitle" class="modal__title" style="margin:0; font-size:1.25rem;">Mensagem</h3>
+      </div>
+      <button class="modal__close" onclick="(window.App && App.closeMessage && App.closeMessage())">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <p id="messageModalText" style="white-space:pre-wrap; color:#cbd5e1; margin:0;"></p>
+      <div id="messageModalDetails" class="status status--error" style="display:none; margin-top:1rem; text-align:left;"></div>
+      <div class="modal__buttons" style="margin-top:1.25rem;">
+        <button class="modal__button modal__button--primary" onclick="(window.App && App.closeMessage && App.closeMessage())">Ok</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+<!-- Toast Container (quick notifications) -->
+<div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>

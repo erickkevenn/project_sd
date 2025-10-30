@@ -12,7 +12,7 @@
           <h3>Documentos</h3>
         </div>
         <div class="card-actions">
-          <button data-permission="read" onclick="DocumentService.list()" class="btn-action">
+          <button data-permission="read" onclick="window.open('/ui/components/documentos.html', '_blank')" class="btn-action">
             <i class="fas fa-list"></i>
             Listar Documentos
           </button>
@@ -33,7 +33,7 @@
           <h3>Prazos</h3>
         </div>
         <div class="card-actions">
-          <button data-permission="read" onclick="DeadlineService.list()" class="btn-action">
+          <button data-permission="read" onclick="window.open('/ui/components/deadlines.html', '_blank')" class="btn-action">
             <i class="fas fa-list"></i>
             Listar Prazos
           </button>
@@ -54,17 +54,13 @@
           <h3>Audiências</h3>
         </div>
         <div class="card-actions">
-          <button data-permission="read" onclick="HearingService.list()" class="btn-action">
+          <button data-permission="read" onclick="window.open('/ui/components/hearing.html', '_blank')" class="btn-action">
             <i class="fas fa-list"></i>
             Listar Audiências
           </button>
           <button data-permission="write" onclick="HearingService.showCreateModal()" class="btn-action">
             <i class="fas fa-plus"></i>
             Agendar Audiência
-          </button>
-          <button data-permission="read" onclick="HearingService.listToday()" class="btn-action">
-            <i class="fas fa-calendar-day"></i>
-            Audiências de Hoje
           </button>
         </div>
       </div>
@@ -75,17 +71,13 @@
           <h3>Processos</h3>
         </div>
         <div class="card-actions">
-          <button data-permission="read" onclick="ProcessService.list()" class="btn-action">
+          <button data-permission="read" onclick="window.open('/ui/components/process.html', '_blank')" class="btn-action">
             <i class="fas fa-list"></i>
             Listar Processos
           </button>
           <button data-permission="read" onclick="ProcessService.showSearchModal()" class="btn-action">
             <i class="fas fa-search"></i>
             Buscar Processo
-          </button>
-          <button data-permission="orchestrate" onclick="ProcessService.orchestrate()" class="btn-action primary">
-            <i class="fas fa-magic"></i>
-            Orquestrar Caso
           </button>
         </div>
       </div>
