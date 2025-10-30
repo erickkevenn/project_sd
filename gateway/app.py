@@ -2,10 +2,11 @@
 API Gateway Principal - Versão Refatorada
 Implementa arquitetura limpa e padrões de código limpo
 """
-
-from flask import Flask, request, jsonify, send_from_directory
 import os
 import logging
+import mimetypes
+
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -18,7 +19,8 @@ from services import ServiceClient, HealthChecker, GrpcClient
 from security import (
     require_auth, require_permission, require_role, validate_json,
     LoginSchema, DocumentSchema, DeadlineSchema, HearingSchema,
-    authenticate_user, generate_token, log_security_event
+    authenticate_user, generate_token, log_security_event,
+    RegisterSchema, ProcessSchema, CreateUserSchema
 )
 from exceptions import GatewayException
 
@@ -86,21 +88,22 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     
     # === Rotas de UI ===
     @app.route("/")
+    @limiter.exempt
     def root():
         """Redireciona para a UI"""
         return send_from_directory(UI_DIR, "index.html")
     
     @app.route("/ui")
+    @limiter.exempt
     def ui():
         """Serve a interface de usuário"""
         return send_from_directory(UI_DIR, "index.html")
     
     @app.route("/ui/<path:filename>")
+    @limiter.exempt
     def ui_static(filename):
         """Serve arquivos estáticos da UI (CSS, JS, etc.)"""
-        from flask import Response
-        import mimetypes
-        
+
         # Determina o tipo MIME baseado na extensão do arquivo
         mimetype = mimetypes.guess_type(filename)[0]
         if filename.endswith('.css'):
@@ -115,6 +118,7 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         return response
     
     @app.route("/favicon.ico")
+    @limiter.exempt
     def favicon():
         """Favicon vazio"""
         return "", 204
@@ -124,6 +128,14 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def health():
         """Endpoint de health check"""
         try:
+            # Modo rápido: não consulta os serviços dependentes
+            if request.args.get('fast', '0') in ('1', 'true', 'yes'):
+                return jsonify({
+                    "status": "healthy",
+                    "mode": "fast",
+                    "services": list(service_client.services.keys())
+                }), 200
+
             health_info = health_checker.check_all_services()
             
             # Adiciona informações sobre gRPC se disponível
@@ -149,6 +161,35 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             }), 500
     
     # === Rotas de Autenticação ===
+    @app.post("/api/auth/register")
+    @limiter.limit(config.LOGIN_RATE_LIMIT)
+    @validate_json(RegisterSchema)
+    def register():
+        """Cadastro de usuário (delegado ao serviço Auth)"""
+        try:
+            response_data, status_code = service_client.forward_request(
+                "auth", "POST", "/auth/register", json_body=request.validated_data
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+    
+    # Admin cria usuários do escritório
+    @app.post("/api/users")
+    @require_auth
+    @require_role("admin")
+    @validate_json(CreateUserSchema)
+    def create_user():
+        try:
+            payload = dict(request.validated_data)
+            # força associação ao mesmo escritório do admin logado
+            payload["office_id"] = request.current_user.get("office_id")
+            response_data, status_code = service_client.forward_request(
+                "auth", "POST", "/auth/users", json_body=payload
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
     @app.post("/api/auth/login")
     @limiter.limit(config.LOGIN_RATE_LIMIT)
     @validate_json(LoginSchema)
@@ -156,26 +197,42 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         """Endpoint de login com autenticação"""
         try:
             data = request.validated_data
-            username = data['username']
+            email = data['email']
             password = data['password']
             
-            # Autentica usuário
-            user = authenticate_user(username, password)
-            if not user:
-                log_security_event("LOGIN_FAILED", f"Failed login attempt for {username} from {request.remote_addr}")
+            # Delegar autenticação ao serviço Auth
+            auth_resp, auth_status = service_client.forward_request(
+                "auth", "POST", "/auth/login", json_body={"email": email, "password": password}
+            )
+            if auth_status != 200:
+                log_security_event("LOGIN_FAILED", f"Failed login attempt for {email} from {request.remote_addr}")
                 return jsonify({"error": "Invalid credentials"}), 401
+
+            user_info = auth_resp.get("user", {"roles": [], "permissions": []})
+
+            # Gera token JWT localmente (gateway emite JWT)
+            token = generate_token(
+                email,
+                user_info.get('roles', []),
+                user_info.get('permissions', []),
+                user_info.get('office_id'),
+                user_info.get('name'),
+                user_info.get('user_type')
+            )
             
-            # Gera token JWT
-            token = generate_token(username, user['roles'], user['permissions'])
-            
-            log_security_event("LOGIN_SUCCESS", f"Successful login for {username} from {request.remote_addr}")
+            log_security_event("LOGIN_SUCCESS", f"Successful login for {email} from {request.remote_addr}")
             
             return jsonify({
                 "token": token,
                 "user": {
-                    "username": username,
-                    "roles": user['roles'],
-                    "permissions": user['permissions']
+                    "email": email,
+                    "username": email.split('@')[0],  # Compatibility
+                    "name": user_info.get('name', email.split('@')[0]),
+                    "roles": user_info.get('roles', []),
+                    "permissions": user_info.get('permissions', []),
+                    "office_id": user_info.get('office_id'),
+                    "office": user_info.get('office', email.split('@')[1]),
+                    "user_type": user_info.get('user_type')
                 }
             }), 200
             
@@ -187,13 +244,29 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @require_auth
     def get_current_user():
         """Retorna informações do usuário atual"""
-        return jsonify({
-            "user": {
-                "username": request.current_user['username'],
-                "roles": request.current_user['roles'],
-                "permissions": request.current_user['permissions']
-            }
-        }), 200
+        user_data = {
+            "email": request.current_user.get('email'),
+            "name": request.current_user.get('name'),
+            "user_type": request.current_user.get('user_type'),
+            "roles": request.current_user.get('roles', []),
+            "permissions": request.current_user.get('permissions', []),
+            "office_id": request.current_user.get('office_id')
+        }
+        
+        # Buscar nome do escritório
+        office_id = request.current_user.get('office_id')
+        if office_id:
+            try:
+                office_resp, office_status = service_client.forward_request(
+                    "auth", "GET", f"/offices/{office_id}"
+                )
+                if office_status == 200 and office_resp:
+                    user_data['office'] = office_resp.get('name') or office_resp.get('office_name') or 'Escritório'
+            except Exception as e:
+                log_security_event("OFFICE_INFO_ERROR", f"Failed to load office info: {str(e)}")
+                user_data['office'] = 'Escritório'
+        
+        return jsonify({"user": user_data}), 200
     
     # === Rotas de Documentos ===
     @app.get("/api/documents")
@@ -226,6 +299,22 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def create_document():
         """Cria um novo documento"""
         try:
+            # Verifica obrigatoriedade de `process_id` e existência do processo
+            process_id = request.validated_data.get('process_id')
+            if not process_id:
+                return jsonify({"error": "Field 'process_id' is required to create a document"}), 400
+
+            # Valida existência do processo no serviço de processos (busca por número)
+            try:
+                proc_resp, proc_status = service_client.forward_request(
+                    "processes", "GET", f"/processes/by-number/{process_id}"
+                )
+            except Exception:
+                return jsonify({"error": "Failed to validate process existence"}), 503
+
+            if proc_status != 200:
+                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+
             # Verifica se deve usar gRPC
             if getattr(request, 'prefer_grpc', False) and grpc_client.is_available('documents'):
                 response_data, status_code = grpc_client.call_service(
@@ -290,6 +379,22 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def create_deadline():
         """Cria um novo prazo"""
         try:
+            # Valida presence de process_id
+            process_id = request.validated_data.get('process_id')
+            if not process_id:
+                return jsonify({"error": "Field 'process_id' is required to create a deadline"}), 400
+
+            # Valida existência do processo (busca por número)
+            try:
+                proc_resp, proc_status = service_client.forward_request(
+                    "processes", "GET", f"/processes/by-number/{process_id}"
+                )
+            except Exception:
+                return jsonify({"error": "Failed to validate process existence"}), 503
+
+            if proc_status != 200:
+                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+
             response_data, status_code = service_client.forward_request(
                 "deadlines", "POST", "/deadlines", json_body=request.validated_data
             )
@@ -339,6 +444,74 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             return jsonify(response_data), status_code
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code
+
+    # === Rotas de Processos ===
+    @app.get("/api/processes")
+    @require_auth
+    @require_permission("read")
+    @limiter.limit("30 per minute")
+    def list_processes():
+        try:
+            response_data, status_code = service_client.forward_request(
+                "processes", "GET", "/processes"
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+
+    @app.post("/api/processes")
+    @require_auth
+    @require_permission("write")
+    @validate_json(ProcessSchema)
+    @limiter.limit("10 per minute")
+    def create_process():
+        try:
+            response_data, status_code = service_client.forward_request(
+                "processes", "POST", "/processes", json_body=request.validated_data
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+
+    @app.get("/api/processes/<proc_id>")
+    @require_auth
+    @require_permission("read")
+    @limiter.limit("30 per minute")
+    def get_process(proc_id):
+        try:
+            response_data, status_code = service_client.forward_request(
+                "processes", "GET", f"/processes/{proc_id}"
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+
+    @app.put("/api/processes/<proc_id>")
+    @require_auth
+    @require_permission("write")
+    @validate_json(ProcessSchema)
+    @limiter.limit("10 per minute")
+    def update_process(proc_id):
+        try:
+            response_data, status_code = service_client.forward_request(
+                "processes", "PUT", f"/processes/{proc_id}", json_body=request.validated_data
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+
+    @app.delete("/api/processes/<proc_id>")
+    @require_auth
+    @require_permission("delete")
+    @limiter.limit("10 per minute")
+    def delete_process(proc_id):
+        try:
+            response_data, status_code = service_client.forward_request(
+                "processes", "DELETE", f"/processes/{proc_id}"
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
     
     @app.get("/api/hearings/today")
     @require_auth
@@ -362,6 +535,22 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def create_hearing():
         """Cria uma nova audiência"""
         try:
+            # Valida presence de process_id
+            process_id = request.validated_data.get('process_id')
+            if not process_id:
+                return jsonify({"error": "Field 'process_id' is required to create a hearing"}), 400
+
+            # Valida existência do processo (busca por número)
+            try:
+                proc_resp, proc_status = service_client.forward_request(
+                    "processes", "GET", f"/processes/by-number/{process_id}"
+                )
+            except Exception:
+                return jsonify({"error": "Failed to validate process existence"}), 503
+
+            if proc_status != 200:
+                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+
             response_data, status_code = service_client.forward_request(
                 "hearings", "POST", "/hearings", json_body=request.validated_data
             )
@@ -439,34 +628,82 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         try:
             payload = request.get_json(force=True)
             results = {}
-            
+            # Se há definição de processo no payload, cria o processo primeiro
+            used_process_id = None
+            if "process" in payload and isinstance(payload["process"], dict):
+                try:
+                    proc_data, proc_status = service_client.forward_request(
+                        "processes", "POST", "/processes", json_body=payload["process"]
+                    )
+                    if proc_status == 201 and isinstance(proc_data, dict):
+                        # microservices retornam o objeto criado
+                        used_process_id = proc_data.get('id')
+                    else:
+                        results['process'] = {"status": proc_status, "data": proc_data}
+                except Exception as e:
+                    results['process'] = {"status": "error", "error": str(e)}
+
+            # Helper: valida/obtém process_id para criação de recursos
+            def resolve_and_validate_process_id(item: dict):
+                nonlocal used_process_id
+                pid = item.get('process_id') or used_process_id
+                if not pid:
+                    return None, ({"error": "Field 'process_id' is required for related items"}, 400)
+                try:
+                    pr, ps = service_client.forward_request("processes", "GET", f"/processes/{pid}")
+                except Exception:
+                    return None, ({"error": "Failed to validate process existence"}, 503)
+                if ps != 200:
+                    return None, ({"error": "Associated process not found"}, 404)
+                used_process_id = pid
+                return pid, (None, None)
+
             # Cria documento
             if "document" in payload:
                 try:
-                    doc_data, doc_status = service_client.forward_request(
-                        "documents", "POST", "/documents", json_body=payload["document"]
-                    )
-                    results["document"] = {"status": doc_status, "data": doc_data}
+                    doc_item = payload["document"]
+                    pid, err = resolve_and_validate_process_id(doc_item)
+                    if err[0] is not None:
+                        results["document"] = {"status": err[1], "data": err[0]}
+                    else:
+                        # assegura que o document payload contenha o process_id usado
+                        doc_item["process_id"] = used_process_id
+                        doc_data, doc_status = service_client.forward_request(
+                            "documents", "POST", "/documents", json_body=doc_item
+                        )
+                        results["document"] = {"status": doc_status, "data": doc_data}
                 except Exception as e:
                     results["document"] = {"status": "error", "error": str(e)}
-            
+
             # Cria prazo
             if "deadline" in payload:
                 try:
-                    deadline_data, deadline_status = service_client.forward_request(
-                        "deadlines", "POST", "/deadlines", json_body=payload["deadline"]
-                    )
-                    results["deadline"] = {"status": deadline_status, "data": deadline_data}
+                    dl_item = payload["deadline"]
+                    pid, err = resolve_and_validate_process_id(dl_item)
+                    if err[0] is not None:
+                        results["deadline"] = {"status": err[1], "data": err[0]}
+                    else:
+                        dl_item["process_id"] = used_process_id
+                        deadline_data, deadline_status = service_client.forward_request(
+                            "deadlines", "POST", "/deadlines", json_body=dl_item
+                        )
+                        results["deadline"] = {"status": deadline_status, "data": deadline_data}
                 except Exception as e:
                     results["deadline"] = {"status": "error", "error": str(e)}
-            
+
             # Cria audiência
             if "hearing" in payload:
                 try:
-                    hearing_data, hearing_status = service_client.forward_request(
-                        "hearings", "POST", "/hearings", json_body=payload["hearing"]
-                    )
-                    results["hearing"] = {"status": hearing_status, "data": hearing_data}
+                    hr_item = payload["hearing"]
+                    pid, err = resolve_and_validate_process_id(hr_item)
+                    if err[0] is not None:
+                        results["hearing"] = {"status": err[1], "data": err[0]}
+                    else:
+                        hr_item["process_id"] = used_process_id
+                        hearing_data, hearing_status = service_client.forward_request(
+                            "hearings", "POST", "/hearings", json_body=hr_item
+                        )
+                        results["hearing"] = {"status": hearing_status, "data": hearing_data}
                 except Exception as e:
                     results["hearing"] = {"status": "error", "error": str(e)}
             

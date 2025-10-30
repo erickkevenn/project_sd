@@ -3,6 +3,48 @@
  * Handles modal management and form operations
  */
 
+// Helper to dispatch API requests in a backward-compatible way.
+// Prefer `hit` (legacy), then `apiRequest` (page-local helper), then fallback to fetch.
+function dispatchRequest(path, method = 'GET', body = null) {
+  try {
+    if (typeof window.hit === 'function') {
+      // legacy global helper (may not return a promise)
+      try { window.hit(path, method, body); } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (typeof window.apiRequest === 'function') {
+      const options = { method };
+      if (body) options.body = JSON.stringify(body);
+      // apiRequest returns a promise
+      window.apiRequest(path, options).catch(err => console.warn('apiRequest error', err));
+      return;
+    }
+
+    // Fallback: simple fetch
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('jwtToken');
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    fetch(path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    }).then(async res => {
+      if (!res.ok) {
+        let err = 'Erro na requisição';
+        try { const j = await res.json(); err = j.error || j.message || err; } catch {};
+        alert(err);
+      }
+    }).catch(e => {
+      console.error('dispatchRequest fetch error', e);
+      alert('Erro na requisição: ' + (e.message || e));
+    });
+  } catch (e) {
+    console.error('dispatchRequest error', e);
+  }
+}
+
 // === FUNÇÕES DE CRIAÇÃO COM MODAIS ===
 
 // Criar Documento
@@ -61,7 +103,7 @@ function executeCreateDocument() {
   }
   
   closeCreateDocumentModal();
-  hit('/api/documents', 'POST', documentData);
+  dispatchRequest('/api/documents', 'POST', documentData);
 }
 
 // Criar Prazo
@@ -97,7 +139,7 @@ function closeCreateDeadlineModal() {
   document.getElementById('createDeadlineModal').style.display = 'none';
 }
 
-function executeCreateDeadline() {
+async function executeCreateDeadline() {
   const processIdInput = document.getElementById('deadlineProcessIdInput');
   const dateInput = document.getElementById('deadlineDateInput');
   const descInput = document.getElementById('deadlineDescInput');
@@ -118,7 +160,31 @@ function executeCreateDeadline() {
   };
   
   closeCreateDeadlineModal();
-  hit('/api/deadlines', 'POST', deadlineData);
+
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await fetch('/api/deadlines', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(deadlineData)
+    });
+    
+    if (response.ok) {
+      alert('✅ Prazo criado com sucesso!');
+      if (typeof loadAllDeadlines === 'function') {
+        loadAllDeadlines();
+      }
+    } else {
+      const error = await response.json();
+      alert('❌ Erro ao criar prazo: ' + (error.error || 'Erro desconhecido'));
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    alert('❌ Erro ao criar prazo.');
+  }
 }
 
 // Criar Audiência
@@ -180,7 +246,7 @@ function executeCreateHearing() {
   };
   
   closeCreateHearingModal();
-  hit('/api/hearings', 'POST', hearingData);
+  dispatchRequest('/api/hearings', 'POST', hearingData);
 }
 
 // === FUNÇÕES DE BUSCA DE DOCUMENTOS ===
@@ -213,7 +279,6 @@ function executeSearch() {
     return;
   }
   
-  closeSearchModal();
   hit(`/api/documents/${docId}`, 'GET');
 }
 
@@ -247,130 +312,103 @@ function executeProcessSearch() {
     return;
   }
   
-  closeProcessModal();
   hit(`/api/process/${processId}/summary`, 'GET');
 }
 
 // === FUNÇÕES DE EXCLUSÃO ===
 
-function deleteDocument() {
-  const modal = document.getElementById('deleteModal');
-  const deleteInput = document.getElementById('deleteIdInput');
-  
-  deleteInput.value = '';
-  modal.style.display = 'flex';
-  deleteInput.focus();
-  
-  deleteInput.onkeypress = function(e) {
-    if (e.key === 'Enter') {
-      executeDelete();
+async function listProcesses() {
+  try {
+    const box = document.getElementById('out');
+    const status = document.getElementById('status');
+    
+    box.className = 'result';
+    box.textContent = 'LISTAR PROCESSOS → Buscando...\n\nColetando informações de todos os serviços...';
+    status.textContent = 'Buscando processos...';
+    
+    const init = { 
+      method: 'GET', 
+      headers: jwtToken ? { 'Authorization': 'Bearer ' + jwtToken } : {}
+    };
+    
+    const [docsRes, deadlinesRes, hearingsRes] = await Promise.all([
+      fetch('/api/documents', init),
+      fetch('/api/deadlines', init), 
+      fetch('/api/hearings', init)
+    ]);
+    
+    const processIds = new Set();
+    
+    if (docsRes.ok) {
+      const docs = await docsRes.json();
+      docs.forEach(doc => {
+        if (doc.process_id) processIds.add(doc.process_id);
+      });
     }
-  };
-}
-
-function closeDeleteModal() {
-  document.getElementById('deleteModal').style.display = 'none';
-}
-
-function executeDelete() {
-  const deleteInput = document.getElementById('deleteIdInput');
-  const docId = deleteInput.value.trim();
-  
-  if (!docId) {
-    alert('Por favor, digite o ID do documento.');
-    return;
-  }
-  
-  closeDeleteModal();
-  hit(`/api/documents/${docId}`, 'DELETE');
-}
-
-function deleteDeadline() {
-  const modal = document.getElementById('deleteDeadlineModal');
-  const deleteInput = document.getElementById('deleteDeadlineIdInput');
-  
-  deleteInput.value = '';
-  modal.style.display = 'flex';
-  deleteInput.focus();
-  
-  deleteInput.onkeypress = function(e) {
-    if (e.key === 'Enter') {
-      executeDeleteDeadline();
+    
+    if (deadlinesRes.ok) {
+      const deadlines = await deadlinesRes.json();
+      deadlines.forEach(deadline => {
+        if (deadline.process_id) processIds.add(deadline.process_id);
+      });
     }
-  };
-}
-
-function closeDeleteDeadlineModal() {
-  document.getElementById('deleteDeadlineModal').style.display = 'none';
-}
-
-function executeDeleteDeadline() {
-  const deleteInput = document.getElementById('deleteDeadlineIdInput');
-  const deadlineId = deleteInput.value.trim();
-  
-  if (!deadlineId) {
-    alert('Por favor, digite o ID do prazo.');
-    return;
-  }
-  
-  closeDeleteDeadlineModal();
-  hit(`/api/deadlines/${deadlineId}`, 'DELETE');
-}
-
-function deleteHearing() {
-  const modal = document.getElementById('deleteHearingModal');
-  const deleteInput = document.getElementById('deleteHearingIdInput');
-  
-  deleteInput.value = '';
-  modal.style.display = 'flex';
-  deleteInput.focus();
-  
-  deleteInput.onkeypress = function(e) {
-    if (e.key === 'Enter') {
-      executeDeleteHearing();
+    
+    if (hearingsRes.ok) {
+      const hearings = await hearingsRes.json();
+      if (hearings.items) {
+        hearings.items.forEach(hearing => {
+          if (hearing.process_id) processIds.add(hearing.process_id);
+        });
+      }
     }
-  };
-}
-
-function closeDeleteHearingModal() {
-  document.getElementById('deleteHearingModal').style.display = 'none';
-}
-
-function executeDeleteHearing() {
-  const deleteInput = document.getElementById('deleteHearingIdInput');
-  const hearingId = deleteInput.value.trim();
-  
-  if (!hearingId) {
-    alert('Por favor, digite o ID da audiência.');
-    return;
+    
+    const processArray = Array.from(processIds);
+    
+    if (processArray.length === 0) {
+      box.textContent = '📋 NENHUM PROCESSO ENCONTRADO\n\nNão há processos cadastrados no sistema.\n💡 Dica: Use "Orquestrar Caso" para criar um processo completo.';
+      status.textContent = 'Nenhum processo encontrado';
+      return;
+    }
+    
+    box.textContent = `✅ ${processArray.length} PROCESSO(S) ENCONTRADO(S)\n\n` +
+                     `Processos disponíveis:\n${processArray.map(id => `• ${id}`).join('\n')}\n\n` +
+                     `💡 Use "Buscar Processo" para ver detalhes completos.`;
+    status.textContent = `${processArray.length} processo(s) encontrado(s)`;
+    
+  } catch (e) {
+    const box = document.getElementById('out');
+    const status = document.getElementById('status');
+    box.className = 'result err';
+    box.textContent = '⚠️ ERRO AO LISTAR PROCESSOS\n\nNão foi possível acessar os serviços.\n💡 Dica: Verifique se todos os serviços estão funcionando.';
+    status.textContent = 'Erro: ' + e.message;
   }
-  
-  closeDeleteHearingModal();
-  hit(`/api/hearings/${hearingId}`, 'DELETE');
 }
 
-// Export functions for global access
-window.createDocument = createDocument;
-window.closeCreateDocumentModal = closeCreateDocumentModal;
-window.executeCreateDocument = executeCreateDocument;
-window.createDeadlineModal = createDeadlineModal;
-window.closeCreateDeadlineModal = closeCreateDeadlineModal;
-window.executeCreateDeadline = executeCreateDeadline;
-window.createHearingModal = createHearingModal;
-window.closeCreateHearingModal = closeCreateHearingModal;
-window.executeCreateHearing = executeCreateHearing;
-window.searchDocument = searchDocument;
-window.closeSearchModal = closeSearchModal;
-window.executeSearch = executeSearch;
-window.searchProcess = searchProcess;
-window.closeProcessModal = closeProcessModal;
-window.executeProcessSearch = executeProcessSearch;
-window.deleteDocument = deleteDocument;
-window.closeDeleteModal = closeDeleteModal;
-window.executeDelete = executeDelete;
-window.deleteDeadline = deleteDeadline;
-window.closeDeleteDeadlineModal = closeDeleteDeadlineModal;
-window.executeDeleteDeadline = executeDeleteDeadline;
-window.deleteHearing = deleteHearing;
-window.closeDeleteHearingModal = closeDeleteHearingModal;
-window.executeDeleteHearing = executeDeleteHearing;
+// === FUNÇÃO DE ORQUESTRAÇÃO ===
+
+function orchestrateCase() {
+  const today = new Date();
+  const deadlineDate = new Date(today);
+  deadlineDate.setDate(today.getDate() + 30);
+  const hearingDate = new Date(today);
+  hearingDate.setDate(today.getDate() + 15);
+  
+  hit('/api/orchestrate/file-case','POST',{
+    document:{
+      title:'Petição Inicial via Orquestração',
+      content:'Documento criado através da funcionalidade de orquestração automática.',
+      author:'Sistema'
+    },
+    deadline:{
+      process_id:'ORCH-01',
+      due_date: deadlineDate.toISOString().split('T')[0],
+      description: 'Prazo para resposta - criado via orquestração'
+    },
+    hearing:{
+      process_id:'ORCH-01',
+      date: hearingDate.toISOString().split('T')[0],
+      courtroom:'Sala 3',
+      description: 'Audiência inicial - criada via orquestração'
+    }
+  });
+}

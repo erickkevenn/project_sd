@@ -47,6 +47,10 @@ class DocumentsService(BaseService):
                 if error:
                     return self.create_error_response(error, 400)
                 
+                # Exige que o documento esteja associado a um processo
+                if not data.get('process_id'):
+                    return self.create_error_response("Field 'process_id' is required to create a document", 400)
+                
                 # Cria documento
                 doc_id = self.generate_id()
                 document = {

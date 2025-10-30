@@ -67,9 +67,14 @@ function createDataTable(items, type = null) {
     html += `<th class="${className}">${formatColumnName(key)}</th>`;
   });
   
-  // Adiciona coluna de ações se o tipo permite exclusão
+  // Adiciona coluna de ações apenas se o tipo permite exclusão E usuário tem permissão
   if (type && ['documents', 'deadlines', 'hearings'].includes(type)) {
-    html += '<th class="col-actions">Ações</th>';
+    const userPermissions = window.App?.state?.user?.permissions || [];
+    const canDelete = userPermissions.includes('delete');
+    
+    if (canDelete) {
+      html += '<th class="col-actions">Ações</th>';
+    }
   }
   
   html += '</tr></thead>';
@@ -84,14 +89,24 @@ function createDataTable(items, type = null) {
       html += `<td class="${className}">${formatCellValue(key, value)}</td>`;
     });
     
-    // Adiciona botão de exclusão se o tipo permite
+    // Adiciona botão de exclusão apenas se o tipo permite E o usuário tem permissão de delete
     if (type && ['documents', 'deadlines', 'hearings'].includes(type)) {
       const itemId = item.id || item._id || item.document_id || item.deadline_id || item.hearing_id;
-      html += `<td class="col-actions">
-        <button class="btn-delete" onclick="confirmDelete('${itemId}', '${type}', '${getItemDescription(item, type)}')" title="Excluir">
-          <i class="fas fa-trash"></i>
-        </button>
-      </td>`;
+      
+      // Verifica se o usuário tem permissão de delete (apenas admin)
+      const userPermissions = window.App?.state?.user?.permissions || [];
+      const canDelete = userPermissions.includes('delete');
+      
+      if (canDelete) {
+        html += `<td class="col-actions">
+          <button class="btn-delete" onclick="confirmDelete('${itemId}', '${type}', '${getItemDescription(item, type)}')" title="Excluir">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>`;
+      } else {
+        // Mostra célula vazia para manter alinhamento
+        html += `<td class="col-actions"></td>`;
+      }
     }
     
     html += '</tr>';

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prazos - JurisFlow</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/pages.css">
+    <link rel="stylesheet" href="../css/process.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Load utilities first -->
+    <script src="../js/utils.js"></script>
+    <script src="../js/modals.js" defer></script>
+    <!-- Header Placeholder -->
+    
+    
+    
+
+</head>
+
+
+
+<body>
+    <div id="header-placeholder"></div>
+
+    <div class="process-container">
+        <!-- Page Header -->
+        <div class="process-header">
+            <h1 class="process-title">
+                <i class="fas fa-clock"></i>
+                Gerenciamento de Prazos
+            </h1>
+            <div class="process-actions">
+                <button onclick="loadAllDeadlines()" class="btn btn--primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar Lista
+                </button>
+                <!-- 'Criar Novo Prazo' removed from page header per request -->
+            </div>
+        </div>
+
+        <!-- Search Label + Bar -->
+        <div class="search-label">Buscar prazos</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input search-input--small"
+                placeholder="Digite o ID do processo ou descrição para filtrar..." onkeyup="filterDeadlines()">
+        </div>
+
+        <!-- Content Area -->
+        <div class="process-content">
+            <div id="deadlineListContainer">
+                <div class="status-loading">
+                    <div><i class="fas fa-circle-notch"></i></div>
+                    <div>Carregando prazos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Deadline Modal -->
+    <div id="createDeadlineModal" class="modal" onclick="closeCreateDeadlineModal()">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">⏰ Criar Prazo</div>
+            <div class="info-text">Preencha as informações do prazo:</div>
+            <input type="text" id="deadlineProcessIdInput" class="modal__input" placeholder="ID do Processo * (ex: PROC-001)" required />
+            <input type="date" id="deadlineDateInput" class="modal__input" required />
+            <textarea id="deadlineDescInput" class="modal__input" placeholder="Descrição do prazo *" rows="3" required></textarea>
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeCreateDeadlineModal()">Cancelar</button>
+                <button class="modal__button modal__button--primary" onclick="executeCreateDeadline()">Criar Prazo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Deadline Modal -->
+    <div id="deleteDeadlineModal" class="modal" onclick="closeDeleteDeadlineModal()">
+        <div class="modal__content" onclick="event.stopPropagation()">
+            <div class="modal__header">🗑️ Excluir Prazo</div>
+            <div class="info-text">Tem certeza que deseja excluir este prazo?</div>
+            <div class="warning-text">⚠️ Esta ação não pode ser desfeita!</div>
+            <input type="hidden" id="deleteDeadlineIdInput" />
+            <div id="deleteDeadlineInfo" style="margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;"></div>
+            <div class="modal__buttons">
+                <button class="modal__button modal__button--secondary" onclick="closeDeleteDeadlineModal()">Cancelar</button>
+                <button class="modal__button modal__button--danger" onclick="confirmDeleteDeadline()">Excluir Prazo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.protocol + '//' + window.location.host;
+        let allDeadlines = [];
+
+        // API Helper
+        async function apiRequest(endpoint, options = {}) {
+            const token = localStorage.getItem('jwtToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            };
+
+            try {
+                const response = await fetch(API_BASE_URL + endpoint, {
+                    ...options,
+                    headers: { ...headers, ...options.headers }
+                });
+
+                const data = await response.json();
+                return { ok: response.ok, status: response.status, data };
+            } catch (error) {
+                console.error('API Request failed:', error);
+                return { ok: false, error: error.message };
+            }
+        }
+
+        async function loadAllDeadlines() {
+            const container = document.getElementById('deadlineListContainer');
+            container.innerHTML = `
+                <div class="status-loading">
+                    <div><i class="fas fa-circle-notch"></i></div>
+                    <div>Carregando prazos...</div>
+                </div>`;
+            try {
+                const response = await apiRequest('/api/deadlines', { method: 'GET' });
+                
+                if (response.ok) {
+                    const deadlines = response.data || [];
+                    allDeadlines = Array.isArray(deadlines) ? deadlines : [];
+                    renderDeadlineTable(allDeadlines);
+                } else {
+                    console.error('Erro ao carregar prazos:', response);
+                    container.innerHTML = '<div class="empty-state">Erro ao carregar prazos.</div>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar prazos:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar prazos.</div>';
+            }
+        }
+
+        function renderDeadlineTable(deadlines) {
+            const container = document.getElementById('deadlineListContainer');
+            
+            if (!deadlines || deadlines.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state__icon"><i class="fas fa-clock"></i></div>
+                        <div class="empty-state__title">Nenhum prazo encontrado</div>
+                        <div class="empty-state__text">Crie um novo prazo para começar.</div>
+                    </div>`;
+                return;
+            }
+
+            // Sort deadlines by due_date (closest first)
+            const sortedDeadlines = [...deadlines].sort((a, b) => {
+                if (!a.due_date) return 1;
+                if (!b.due_date) return -1;
+                return new Date(a.due_date) - new Date(b.due_date);
+            });
+
+            let html = `
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Processo</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Descrição</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            sortedDeadlines.forEach(deadline => {
+                const dueDate = deadline.due_date ? formatDate(deadline.due_date, false) : 'N/A';
+                const status = getDeadlineStatus(deadline.due_date);
+                const statusClass = status.class;
+                const statusText = status.text;
+                const statusIcon = status.icon;
+                
+                html += `
+                    <tr>
+                        <td><strong>${escapeHtml(deadline.id || 'N/A')}</strong></td>
+                        <td>${escapeHtml(deadline.process_id || '-')}</td>
+                        <td class="col-date">${dueDate}</td>
+                        <td><span class="status-badge status-badge--${statusClass}">
+                            <i class="fas ${statusIcon}"></i> ${statusText}
+                        </span></td>
+                        <td>${escapeHtml(deadline.description || '-')}</td>
+                        <td>
+                            <button onclick="deleteDeadlineConfirm('${escapeHtml(deadline.id)}', '${escapeHtml(deadline.process_id || '')}', '${escapeHtml(deadline.due_date || '')}', '${escapeHtml(deadline.description || '')}')" class="btn btn--danger btn--small">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function getDeadlineStatus(dueDate) {
+            if (!dueDate) {
+                return { class: 'warning', text: 'Sem Data', icon: 'fa-question-circle' };
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const due = new Date(dueDate);
+            due.setHours(0, 0, 0, 0);
+            
+            const diffTime = due - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                return { class: 'danger', text: 'Vencido', icon: 'fa-exclamation-circle' };
+            } else if (diffDays === 0) {
+                return { class: 'warning', text: 'Vence Hoje', icon: 'fa-clock' };
+            } else if (diffDays <= 7) {
+                return { class: 'warning', text: `${diffDays} dias`, icon: 'fa-hourglass-half' };
+            } else if (diffDays <= 30) {
+                return { class: 'info', text: `${diffDays} dias`, icon: 'fa-calendar-check' };
+            } else {
+                return { class: 'success', text: `${diffDays} dias`, icon: 'fa-calendar' };
+            }
+        }
+
+        function filterDeadlines() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allDeadlines.filter(d =>
+                (d.process_id && d.process_id.toLowerCase().includes(searchTerm)) ||
+                (d.description && d.description.toLowerCase().includes(searchTerm)) ||
+                (d.id && d.id.toLowerCase().includes(searchTerm))
+            );
+            renderDeadlineTable(filtered);
+        }
+
+        function filterTodayDeadlines() {
+            const today = new Date().toISOString().split('T')[0];
+            const filtered = allDeadlines.filter(d => d.due_date && d.due_date.startsWith(today));
+            
+            if (filtered.length === 0) {
+                alert('Não há prazos vencendo hoje!');
+                return;
+            }
+            
+            renderDeadlineTable(filtered);
+        }
+
+        function deleteDeadlineConfirm(deadlineId, processId, dueDate, description) {
+            const modal = document.getElementById('deleteDeadlineModal');
+            const idInput = document.getElementById('deleteDeadlineIdInput');
+            const infoDiv = document.getElementById('deleteDeadlineInfo');
+            
+            idInput.value = deadlineId;
+            
+            const formattedDate = dueDate ? formatDate(dueDate, false) : 'N/A';
+            
+            infoDiv.innerHTML = `
+                <div style="display: grid; gap: 0.5rem;">
+                    <div><strong>ID:</strong> ${escapeHtml(deadlineId)}</div>
+                    <div><strong>Processo:</strong> ${escapeHtml(processId || 'N/A')}</div>
+                    <div><strong>Vencimento:</strong> ${formattedDate}</div>
+                    <div><strong>Descrição:</strong> ${escapeHtml(description || 'N/A')}</div>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeDeleteDeadlineModal() {
+            document.getElementById('deleteDeadlineModal').style.display = 'none';
+        }
+
+        async function confirmDeleteDeadline() {
+            const deadlineId = document.getElementById('deleteDeadlineIdInput').value;
+            
+            if (!deadlineId) {
+                alert('ID do prazo não encontrado.');
+                return;
+            }
+            
+            closeDeleteDeadlineModal();
+            
+            try {
+                const response = await apiRequest(`/api/deadlines/${deadlineId}`, { method: 'DELETE' });
+                
+                if (response.ok) {
+                    alert('Prazo excluído com sucesso!');
+                    loadAllDeadlines();
+                } else {
+                    alert(`Erro ao excluir prazo: ${response.data.error || 'Erro desconhecido'}`);
+                }
+            } catch (error) {
+                console.error('Erro ao excluir prazo:', error);
+                alert('Erro ao excluir prazo.');
+            }
+        }
+
+        // Using escapeHtml and formatDate from utils.js
+    </script>
+
+    <style>
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-badge--danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-badge--warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fcd34d;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .status-badge--info {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-badge--success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .col-date {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .warning-text {
+            color: #fbbf24;
+            font-weight: 600;
+            text-align: center;
+            margin: 1rem 0;
+        }
+    </style>
+
+    <script>
+        // Global function for back to home button
+        window.goToMainScreen = function() {
+            window.location.href = '/ui';
+        };
+
+        // AuthService for header logout button (standalone page compatibility)
+        window.AuthService = {
+            logout: function() {
+                if (confirm('Tem certeza que deseja sair?')) {
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/ui';
+                }
+            }
+        };
+    </script>
+    <script>
+        async function loadHeader() {
+            try {
+                const response = await fetch('header.html');
+                const html = await response.text();
+                document.getElementById('header-placeholder').innerHTML = html;
+                
+                // Show the back home button since we're in a standalone page
+                const btnBackHome = document.getElementById('btnBackHome');
+                if (btnBackHome) {
+                    // Use requestAnimationFrame for smoother display
+                    requestAnimationFrame(() => {
+                        btnBackHome.style.display = 'inline-flex';
+                    });
+                }
+                
+                // Update username after header loads
+                await updateUserInfo();
+            } catch (error) {
+                console.error('Error loading header:', error);
+            }
+        }
+        
+        /**
+         * Update user info in header
+         */
+        async function updateUserInfo() {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) return;
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const userNameBox = document.getElementById('userName');
+                    const officeNameBox = document.getElementById('officeName');
+                    
+                    if (userNameBox && data.user && data.user.username) {
+                        userNameBox.textContent = data.user.username;
+                    }
+                    
+                    if (officeNameBox && data.user && data.user.office) {
+                        officeNameBox.textContent = data.user.office;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadHeader();
+
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                alert('Você precisa estar autenticado para acessar esta página.');
+                window.location.href = '/ui';
+                return;
+            }
+            loadAllDeadlines();
+        });
+    </script>
+</body>
+</html>

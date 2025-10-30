@@ -4,6 +4,7 @@ Implementa autenticação JWT, autorização, validação e outras medidas de se
 """
 
 import jwt
+import re
 import os
 import datetime
 from functools import wraps
@@ -38,8 +39,8 @@ USERS_DB = {
 }
 
 class LoginSchema(Schema):
-    """Schema para validação de login"""
-    username = fields.Str(required=True, validate=lambda x: len(x) >= 3)
+    """Schema para validação de login usando EMAIL"""
+    email = fields.Email(required=True)
     password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
 
 class DocumentSchema(Schema):
@@ -62,6 +63,35 @@ class HearingSchema(Schema):
     courtroom = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
     description = fields.Str(missing="")
 
+class RegisterSchema(Schema):
+    """Schema para validação de registro de usuário usando EMAIL (obrigatório)"""
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
+    name = fields.Str(missing=None)
+    # O papel é detectado automaticamente pelo domínio (@admin.com, @advogado.com, @estagiario.com)
+    # Campos adicionais para cadastro de escritório
+    office_name = fields.Str(missing=None)
+    cnpj = fields.Str(missing=None)
+    responsible_name = fields.Str(missing=None)
+    oab_number = fields.Str(missing=None)
+    phone = fields.Str(missing=None)
+    accept_terms = fields.Bool(missing=None)
+    office_id = fields.Str(missing=None)
+
+class CreateUserSchema(Schema):
+    """Schema para criação de usuário por admin usando EMAIL"""
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
+    name = fields.Str(missing=None)
+    # O papel é detectado automaticamente pelo domínio do email
+
+class ProcessSchema(Schema):
+    """Schema para processos"""
+    number = fields.Str(required=True, validate=lambda x: bool(re.match(r"^PROC-\d+$", x.strip().upper())))
+    title = fields.Str(required=True, validate=lambda x: len(x.strip()) > 0)
+    description = fields.Str(missing="")
+    status = fields.Str(missing="open")
+
 def hash_password(password: str) -> str:
     """Gera hash da senha usando SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -70,12 +100,15 @@ def verify_password(password: str, password_hash: str) -> bool:
     """Verifica se a senha corresponde ao hash"""
     return hash_password(password) == password_hash
 
-def generate_token(username: str, roles: List[str], permissions: List[str]) -> str:
-    """Gera token JWT"""
+def generate_token(email: str, roles: List[str], permissions: List[str], office_id: Optional[str] = None, name: Optional[str] = None, user_type: Optional[str] = None) -> str:
+    """Gera token JWT usando email"""
     payload = {
-        'username': username,
+        'email': email,
+        'name': name,
+        'user_type': user_type,
         'roles': roles,
         'permissions': permissions,
+        'office_id': office_id,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=JWT_EXPIRATION_HOURS),
         'iat': datetime.datetime.utcnow(),
         'jti': secrets.token_hex(16)  # JWT ID único

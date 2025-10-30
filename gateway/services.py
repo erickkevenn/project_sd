@@ -42,6 +42,11 @@ class ServiceClient:
         # Propaga token de autorização
         if "Authorization" in request.headers:
             headers["Authorization"] = request.headers["Authorization"]
+        # Propaga tenant (office)
+        if hasattr(request, 'current_user'):
+            office_id = request.current_user.get('office_id')
+            if office_id:
+                headers["X-Office-ID"] = office_id
         
         return headers
     

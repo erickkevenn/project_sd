@@ -37,9 +37,8 @@ class NavigationService {
     this.clearRegisterForm();
     this.app.navigateTo('register');
     
-    // Reset OAB field and focus on office name
+    // Focus on office name field
     setTimeout(() => {
-      this.app.getService('auth')?.toggleOabField();
       const officeNameField = document.getElementById('officeName');
       if (officeNameField) {
         officeNameField.focus();
@@ -52,6 +51,13 @@ class NavigationService {
    */
   showMain() {
     this.app.navigateTo('main');
+  }
+
+  /**
+   * Show main system (alias for compatibility)
+   */
+  showMainSystem() {
+    this.showMain();
   }
 
   /**
