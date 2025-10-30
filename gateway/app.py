@@ -20,7 +20,7 @@ from security import (
     require_auth, require_permission, require_role, validate_json,
     LoginSchema, DocumentSchema, DeadlineSchema, HearingSchema,
     authenticate_user, generate_token, log_security_event,
-    RegisterSchema, ProcessSchema
+    RegisterSchema, ProcessSchema, CreateUserSchema
 )
 from exceptions import GatewayException
 
@@ -173,6 +173,23 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             return jsonify(response_data), status_code
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code
+    
+    # Admin cria usuários do escritório
+    @app.post("/api/users")
+    @require_auth
+    @require_role("admin")
+    @validate_json(CreateUserSchema)
+    def create_user():
+        try:
+            payload = dict(request.validated_data)
+            # força associação ao mesmo escritório do admin logado
+            payload["office_id"] = request.current_user.get("office_id")
+            response_data, status_code = service_client.forward_request(
+                "auth", "POST", "/auth/users", json_body=payload
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
     @app.post("/api/auth/login")
     @limiter.limit(config.LOGIN_RATE_LIMIT)
     @validate_json(LoginSchema)
@@ -180,36 +197,42 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         """Endpoint de login com autenticação"""
         try:
             data = request.validated_data
-            username = data['username']
+            email = data['email']
             password = data['password']
             
             # Delegar autenticação ao serviço Auth
             auth_resp, auth_status = service_client.forward_request(
-                "auth", "POST", "/auth/login", json_body={"username": username, "password": password}
+                "auth", "POST", "/auth/login", json_body={"email": email, "password": password}
             )
             if auth_status != 200:
-                log_security_event("LOGIN_FAILED", f"Failed login attempt for {username} from {request.remote_addr}")
+                log_security_event("LOGIN_FAILED", f"Failed login attempt for {email} from {request.remote_addr}")
                 return jsonify({"error": "Invalid credentials"}), 401
 
             user_info = auth_resp.get("user", {"roles": [], "permissions": []})
 
             # Gera token JWT localmente (gateway emite JWT)
             token = generate_token(
-                username,
+                email,
                 user_info.get('roles', []),
                 user_info.get('permissions', []),
-                user_info.get('office_id')
+                user_info.get('office_id'),
+                user_info.get('name'),
+                user_info.get('user_type')
             )
             
-            log_security_event("LOGIN_SUCCESS", f"Successful login for {username} from {request.remote_addr}")
+            log_security_event("LOGIN_SUCCESS", f"Successful login for {email} from {request.remote_addr}")
             
             return jsonify({
                 "token": token,
                 "user": {
-                    "username": username,
+                    "email": email,
+                    "username": email.split('@')[0],  # Compatibility
+                    "name": user_info.get('name', email.split('@')[0]),
                     "roles": user_info.get('roles', []),
                     "permissions": user_info.get('permissions', []),
-                    "office_id": user_info.get('office_id')
+                    "office_id": user_info.get('office_id'),
+                    "office": user_info.get('office', email.split('@')[1]),
+                    "user_type": user_info.get('user_type')
                 }
             }), 200
             
@@ -221,13 +244,29 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @require_auth
     def get_current_user():
         """Retorna informações do usuário atual"""
-        return jsonify({
-            "user": {
-                "username": request.current_user['username'],
-                "roles": request.current_user['roles'],
-                "permissions": request.current_user['permissions']
-            }
-        }), 200
+        user_data = {
+            "email": request.current_user.get('email'),
+            "name": request.current_user.get('name'),
+            "user_type": request.current_user.get('user_type'),
+            "roles": request.current_user.get('roles', []),
+            "permissions": request.current_user.get('permissions', []),
+            "office_id": request.current_user.get('office_id')
+        }
+        
+        # Buscar nome do escritório
+        office_id = request.current_user.get('office_id')
+        if office_id:
+            try:
+                office_resp, office_status = service_client.forward_request(
+                    "auth", "GET", f"/offices/{office_id}"
+                )
+                if office_status == 200 and office_resp:
+                    user_data['office'] = office_resp.get('name') or office_resp.get('office_name') or 'Escritório'
+            except Exception as e:
+                log_security_event("OFFICE_INFO_ERROR", f"Failed to load office info: {str(e)}")
+                user_data['office'] = 'Escritório'
+        
+        return jsonify({"user": user_data}), 200
     
     # === Rotas de Documentos ===
     @app.get("/api/documents")

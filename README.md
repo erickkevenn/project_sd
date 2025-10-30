@@ -1,238 +1,223 @@
-# SOA Demo — API Gateway + Microserviços (Flask)
+# Plataforma de Orquestração Jurídica
 
-Projeto de referência para coordenação e orquestração de tarefas jurídicas em um escritório de advocacia. Inclui um API Gateway em Flask, três microserviços (Documentos, Prazos, Audiências), UI web para testes, seed de dados e testes automatizados.
+Projeto enxuto para demonstrar uma arquitetura SOA aplicada ao domínio jurídico, com um API Gateway em Flask, microserviços independentes (Processos, Documentos, Prazos e Audiências), um serviço de Autenticação e uma UI simples para exploração do fluxo fim a fim.
+
+## Objetivos
+
+- Orquestrar criação e consulta de itens jurídicos via Gateway
+- Controlar acesso por papéis e permissões (RBAC) com JWT
+- Demonstrar separação de responsabilidades entre serviços
+
+## Como funciona (visão rápida)
+
+- Gateway (porta 8000) expõe endpoints REST e emite tokens JWT após login.
+- Serviço de Autenticação valida usuários por e-mail e define automaticamente papéis e permissões a partir do domínio do e-mail.
+- Microserviços de negócio persistem dados em JSON local e são acessados exclusivamente via Gateway:
+  - Processes (CRUD de processos, ex.: PROC-001)
+  - Documents (documentos vinculados a processos)
+  - Deadlines (prazos vinculados a processos)
+  - Hearings (audiências vinculadas a processos)
+- UI estática acessível em /ui para explorar rapidamente os fluxos.
 
 ## Pré-requisitos
+
 - Python 3.10+
 - pip atualizado
-- Postman para testar via coleção
+- (Opcional) Postman para testar via coleção
 
-## Estrutura
-```
-soa-gateway-ready/
-  gateway/app.py          # API Gateway (serve UI em /ui na porta 8000)
-  services/
-    documents_service.py  # porta :5001
-    deadlines_service.py  # porta :5002
-    hearings_service.py   # porta :5003
-  ui/
-    gateway_ui.html       # frontend de teste servido pelo Gateway
-  tests/
-    test_integration.py
-    smoke.http
-    SOA-Gateway.postman_collection.json
-  run_all.sh
-  run_all.ps1
-  requirements.txt
-  README.md
-```
+## Executando
 
-## Como executar
+### Execução automatizada (recomendado)
 
-### Execução Automatizada (Recomendado)
+Linux/macOS/WSL:
 
-Os scripts foram melhorados para automatizar todo o processo de setup:
-
-**Linux/macOS/WSL:**
 ```bash
-cd project_sd
 bash run_all.sh
 ```
 
-**Windows (PowerShell):**
+Windows (PowerShell):
+
 ```powershell
-cd project_sd
-.\run_all.ps1
+./run_all.ps1
 ```
 
-Os scripts automaticamente:
-- ✅ Verificam se Python 3.8+ está instalado
-- ✅ Criam o ambiente virtual (.venv)
-- ✅ Instalam todas as dependências
-- ✅ Verificam se as portas estão disponíveis
-- ✅ Criam arquivo .env a partir do template
-- ✅ Iniciam todos os serviços
-- ✅ Verificam se os serviços estão respondendo
-- ✅ Exibem informações úteis (URLs, usuários, comandos)
+### O que o script faz
 
-### Execução Manual (se necessário)
+- Cria .venv e instala dependências
+- Sobe Gateway e serviços
+- Verifica health e imprime URLs úteis
 
-```bash
-cd project_sd
-python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# ou .\.venv\Scripts\Activate.ps1  # Windows
-pip install -r requirements.txt
-bash run_all.sh  # ou .\run_all.ps1
-```
+UI: <http://127.0.0.1:8000/ui>
 
-### Opções dos Scripts
+### Parar serviços
 
-**Linux/macOS:**
-```bash
-bash run_all.sh  # Setup completo + execução
-```
-
-**Windows:**
-```powershell
-.\run_all.ps1           # Setup completo + execução
-.\run_all.ps1 -SkipSetup # Apenas execução (pula setup)
-.\run_all.ps1 -Help     # Exibe ajuda
-```
-
-UI de testes: http://127.0.0.1:8000/ui  
-Na UI, clique em “Seed” para popular dados de exemplo.
-
-Parar os serviços:
-- Linux/macOS/WSL: Ctrl+C no terminal do run_all.sh (encerra todos).
+- Linux/macOS/WSL: Ctrl+C no terminal do script
 - Windows: feche as janelas; se necessário:
   ```powershell
   Get-Process python | Stop-Process -Force
   ```
 
-Dica: o terminal do run_all.sh fica exibindo logs; abra outro terminal para curl/pytest.
+### Execução manual (opcional)
 
-## Testes automatizados
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Linux/macOS
+# .\.venv\Scripts\Activate.ps1 # Windows
+pip install -r requirements.txt
+bash run_all.sh  # ou ./run_all.ps1
+```
+
+## Autenticação, Domínios e Papéis
+
+O login é por e-mail. O domínio do e-mail determina o tipo de usuário, papéis e permissões automaticamente:
+
+- @admin.com → user_type: admin
+  - roles: [admin, advogado, user]
+  - permissions: [read, write, delete, orchestrate, create_user]
+
+- @advogado.com → user_type: advogado
+  - roles: [advogado, user]
+  - permissions: [read, write, orchestrate]
+
+- @estagiario.com → user_type: estagiario
+  - roles: [estagiario, user]
+  - permissions: [read]
+
+Exemplos de contas de desenvolvimento (seed):
+- `admin@admin.com` / `admin123` — administrador (tudo)
+- `advogado@advogado.com` / `lawyer123` — advogado (leitura, escrita, orquestração)
+- `estagiario@estagiario.com` / `intern123` — estagiário (somente leitura)
+- `daniel@advogado.com` / `password` — advogado (exemplo adicional)
+
+Endpoint de login no Gateway:
+- POST /api/auth/login
+  - body: `{ "email": "seu@dominio.com", "password": "senha" }`
+  - retorno: `{ token JWT, user }`
+
+Informações do usuário atual:
+- GET /api/auth/me (enviar Authorization: Bearer <token>)
+
+Criação de usuários:
+- POST /api/auth/register — auto-registro por e-mail; o escritório (office) pode ser criado junto
+- POST /api/users — criação de usuário pelo admin; o usuário criado herda o mesmo office do admin logado
+
+## Lógica de negócio e casos de uso
+
+1) Registrar um escritório e um usuário (auto registro)
+- POST /api/auth/register com email do domínio permitido (@admin.com, @advogado.com ou @estagiario.com)
+- O serviço detecta o user_type pelo domínio e atribui papéis/permissões automaticamente
+- Um office_id é retornado/associado
+
+2) Login e emissão de JWT
+- POST /api/auth/login → Gateway valida no Auth Service e emite JWT contendo email, roles, permissions, office_id
+
+3) Operar recursos de negócio
+- Processos: criar e consultar números como PROC-001
+- Documentos/Prazos/Audiências: sempre vinculados a um process_id (número do processo)
+
+4) Orquestrar um caso completo
+- POST /api/orchestrate/file-case com payload opcional contendo process/document/deadline/hearing
+- O Gateway valida a existência do processo e cria os itens na sequência
+
+5) Resumo de um processo
+- GET /api/process/<process_number>/summary retorna, em uma chamada, documentos, prazos e audiências vinculados
+
+## Endpoints principais (Gateway)
+
+Autenticação e Usuários
+- POST /api/auth/register — registrar usuário (e opcionalmente o escritório)
+- POST /api/auth/login — login por e-mail + senha
+- GET  /api/auth/me — dados do usuário autenticado
+- POST /api/users — criar usuário (apenas admin)
+
+Health/UI/Seed
+- GET /health — status do gateway e serviços
+- GET /ui — interface estática
+- POST /api/seed — popular dados de exemplo (dev)
+
+Processos
+- GET  /api/processes — listar
+- POST /api/processes — criar (requer write)
+- GET  /api/processes/<id> — detalhar
+- PUT  /api/processes/<id> — atualizar (requer write)
+- DELETE /api/processes/<id> — remover (requer delete)
+- GET  /api/processes/by-number/<PROC-XXX> — buscar por número
+
+Documentos
+- GET  /api/documents — listar (requer read)
+- POST /api/documents — criar (requer write; exige process_id existente)
+- GET  /api/documents/<id> — detalhar (requer read)
+- DELETE /api/documents/<id> — remover (requer delete)
+
+Prazos
+- GET  /api/deadlines — listar (requer read)
+- POST /api/deadlines — criar (requer write; exige process_id existente)
+- GET  /api/deadlines/today — prazos de hoje (requer read)
+- DELETE /api/deadlines/<id> — remover (requer delete)
+
+Audiências
+- GET  /api/hearings — listar (requer read)
+- GET  /api/hearings/today — audiências de hoje (requer read)
+- POST /api/hearings — criar (requer write; exige process_id existente)
+- DELETE /api/hearings/<id> — remover (requer delete)
+
+Orquestração
+- GET  /api/process/<PROC-XXX>/summary — resumo do processo (read)
+- POST /api/orchestrate/file-case — cria caso completo (orchestrate)
+
+## Exemplo rápido (curl)
+
+Login e uso do token:
+```bash
+# 1) Login
+TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@admin.com", "password": "admin123"}' | jq -r '.token')
+
+# 2) Criar processo
+curl -s -X POST http://localhost:8000/api/processes \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"number":"PROC-001","title":"Ação de Exemplo"}'
+
+# 3) Criar documento vinculado
+curl -s -X POST http://localhost:8000/api/documents \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Petição","content":"...","author":"Admin","process_id":"PROC-001"}'
+
+# 4) Resumo do processo
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/process/PROC-001/summary
+```
+
+## Testes
 Com os serviços rodando:
 ```bash
 pytest -q
-# ou, arquivo específico:
+# Ou um arquivo específico:
 python -m pytest tests/test_integration.py -v
 ```
 
-## Segurança Implementada
-
-O API Gateway inclui os seguintes aspectos de segurança:
-
-### Autenticação JWT
-- Login: `POST /api/auth/login`
-- Tokens com expiração de 24h
-- Usuários de teste:
-  - `admin/admin123` (todas as permissões)
-  - `lawyer/lawyer123` (read, write, orchestrate)
-  - `intern/intern123` (apenas read)
-
-### Autorização RBAC
-- Sistema de roles e permissions
-- Controle de acesso por endpoint
-
-### Rate Limiting
-- Limites por IP e endpoint
-- Login: 5/minuto
-- Leitura: 30/minuto
-- Escrita: 10/minuto
-
-### Validação de Entrada
-- Schemas Marshmallow
-- Sanitização automática
-- Validação de tipos e formatos
-
-### Security Headers
-- Content Security Policy
-- Anti-clickjacking
-- CORS configurado
-
-### Logging e Auditoria
-- Eventos de segurança
-- Correlation IDs
-- Logs estruturados
-
-## Endpoints (Gateway)
-
-### Autenticação
-- POST /api/auth/login — login e obtenção de token
-- GET /api/auth/me — informações do usuário atual
-
-- Health/UI/Seed
-  - GET /health — status do gateway e URLs dos serviços
-  - GET /ui — UI de testes
-  - POST /api/seed — cria dados de exemplo
-
-- Documents (requer autenticação)
-  - GET /api/documents — listar (requer: read)
-  - POST /api/documents — criar (requer: write)
-  - GET /api/documents/<id> — obter específico (requer: read)
-
-- Deadlines (requer autenticação)
-  - GET /api/deadlines — listar (requer: read)
-  - POST /api/deadlines — criar (requer: write)
-  - GET /api/deadlines/today — prazos de hoje (requer: read)
-
-- Hearings (requer autenticação)
-  - GET /api/hearings — listar (requer: read)
-  - POST /api/hearings — criar (requer: write)
-
-- Orchestration (requer autenticação)
-  - GET /api/process/<id>/summary — resumo do processo (requer: read)
-  - POST /api/orchestrate/file-case — criar caso completo (requer: orchestrate)
-
-## Exemplo de Uso com Autenticação
-
-```bash
-# 1. Login
-TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}' | \
-  jq -r '.token')
-
-# 2. Criar documento
-curl -X POST http://localhost:8000/api/documents \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Teste", "content": "Conteúdo", "author": "Admin"}'
-
-# 3. Listar documentos
-curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8000/api/documents
+No Windows (PowerShell) você também pode usar:
+```powershell
+./run_tests.ps1
 ```
 
-## Testes de Segurança
-
-```bash
-# Testes automatizados de segurança
-python -m pytest tests/test_security.py -v
-
-# Teste manual básico
-python tests/test_security.py
-```
-
-Serviços internos (acesso direto):
-- Documents: GET/POST /documents, GET /documents/<id> — :5001
-- Deadlines: GET/POST /deadlines, GET /deadlines/today — :5002
-- Hearings: GET/POST /hearings (suporta ?date=YYYY-MM-DD) — :5003
-
-## Teste rápido (curl)
-```bash
-# Gateway ok?
-curl http://127.0.0.1:8000/health
-
-# Criar documento
-curl -X POST http://127.0.0.1:8000/api/documents \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Petição","content":"...","author":"Erick"}'
-
-# Listar documentos
-curl http://127.0.0.1:8000/api/documents
-
-# Prazos de hoje
-curl http://127.0.0.1:8000/api/deadlines/today
-
-# Criar audiência
-curl -X POST http://127.0.0.1:8000/api/hearings \
-  -H "Content-Type: application/json" \
-  -d '{"process_id":"0001","date":"2025-11-01","courtroom":"Sala 2"}'
-
-# Listar audiências
-curl http://127.0.0.1:8000/api/hearings
-```
+## Segurança (resumo)
+- JWT emitido pelo Gateway (expiração padrão: 24h)
+- RBAC por roles e permissions em cada endpoint
+- Rate limiting por rota (login, leitura, escrita)
+- Validação com Marshmallow e sanitização de entrada
+- Security headers (CSP, HSTS, anti-clickjacking) e CORS
+- Logging de eventos de segurança com IP e user agent
 
 ## Postman (opcional)
-- Coleção: tests/SOA-Gateway.postman_collection.json
-- Fluxo sugerido: Health → Seed → listagens/criações
-- (Opcional) Ambiente “SOA Local” com base_url = http://127.0.0.1:8000
+- Coleção: `tests/SOA-Gateway.postman_collection.json`
+- Fluxo sugerido: Health → Register/Login → Seed → CRUDs e Orquestração
+- (Opcional) Ambiente: base_url = http://127.0.0.1:8000
 
 ## Notas
-- Projeto voltado a desenvolvimento local e demonstração de arquitetura SOA (Gateway + microserviços + orquestração).
-- Logs são exibidos no terminal de cada processo.
-- Em caso de conflito de portas, ajuste as portas nos serviços ou finalize processos em uso.
-- Sem necessidade de banco externo para testar a orquestração e o fluxo fim a fim.
+- Projeto focado em uso local e demonstração de arquitetura (sem banco externo)
+- Logs são exibidos no terminal de cada processo
+- Em caso de conflito de portas, finalize processos antigos ou ajuste as variáveis de ambiente

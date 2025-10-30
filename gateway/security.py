@@ -39,8 +39,8 @@ USERS_DB = {
 }
 
 class LoginSchema(Schema):
-    """Schema para validação de login"""
-    username = fields.Str(required=True, validate=lambda x: len(x) >= 3)
+    """Schema para validação de login usando EMAIL"""
+    email = fields.Email(required=True)
     password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
 
 class DocumentSchema(Schema):
@@ -64,11 +64,26 @@ class HearingSchema(Schema):
     description = fields.Str(missing="")
 
 class RegisterSchema(Schema):
-    """Schema para validação de registro de usuário"""
-    username = fields.Str(required=True, validate=lambda x: len(x) >= 3)
+    """Schema para validação de registro de usuário usando EMAIL (obrigatório)"""
+    email = fields.Email(required=True)
     password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
-    roles = fields.List(fields.Str(), missing=["user"])
-    permissions = fields.List(fields.Str(), missing=["read", "write"])
+    name = fields.Str(missing=None)
+    # O papel é detectado automaticamente pelo domínio (@admin.com, @advogado.com, @estagiario.com)
+    # Campos adicionais para cadastro de escritório
+    office_name = fields.Str(missing=None)
+    cnpj = fields.Str(missing=None)
+    responsible_name = fields.Str(missing=None)
+    oab_number = fields.Str(missing=None)
+    phone = fields.Str(missing=None)
+    accept_terms = fields.Bool(missing=None)
+    office_id = fields.Str(missing=None)
+
+class CreateUserSchema(Schema):
+    """Schema para criação de usuário por admin usando EMAIL"""
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
+    name = fields.Str(missing=None)
+    # O papel é detectado automaticamente pelo domínio do email
 
 class ProcessSchema(Schema):
     """Schema para processos"""
@@ -85,10 +100,12 @@ def verify_password(password: str, password_hash: str) -> bool:
     """Verifica se a senha corresponde ao hash"""
     return hash_password(password) == password_hash
 
-def generate_token(username: str, roles: List[str], permissions: List[str], office_id: Optional[str] = None) -> str:
-    """Gera token JWT"""
+def generate_token(email: str, roles: List[str], permissions: List[str], office_id: Optional[str] = None, name: Optional[str] = None, user_type: Optional[str] = None) -> str:
+    """Gera token JWT usando email"""
     payload = {
-        'username': username,
+        'email': email,
+        'name': name,
+        'user_type': user_type,
         'roles': roles,
         'permissions': permissions,
         'office_id': office_id,

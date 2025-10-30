@@ -186,6 +186,7 @@ class App {
     const userNameBox = document.getElementById('userName');
     
     if (officeNameBox) {
+      // Usa o campo 'office' retornado pelo backend
       if (this.state.user && this.state.user.office) {
         officeNameBox.textContent = this.state.user.office;
       } else {
@@ -194,8 +195,12 @@ class App {
     }
     
     if (userNameBox) {
-      if (this.state.user && this.state.user.username) {
-        userNameBox.textContent = this.state.user.username;
+      // Usa 'name' retornado pelo backend
+      if (this.state.user && this.state.user.name) {
+        userNameBox.textContent = this.state.user.name;
+      } else if (this.state.user && this.state.user.email) {
+        // Fallback para email
+        userNameBox.textContent = this.state.user.email.split('@')[0];
       } else {
         userNameBox.textContent = 'Usuário';
       }

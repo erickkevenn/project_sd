@@ -254,6 +254,22 @@
                 return;
             }
 
+            // Verificar permissões do usuário
+            const token = localStorage.getItem('jwtToken');
+            let userPermissions = [];
+            
+            // Decodificar JWT para pegar permissões (simples parse do payload)
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    userPermissions = payload.permissions || [];
+                } catch (e) {
+                    console.warn('Could not decode token:', e);
+                }
+            }
+            
+            const canDelete = userPermissions.includes('delete');
+
             let html = '<div class="data-table-container"><table class="data-table">';
             html += '<thead><tr><th>ID do Processo</th><th>Nome</th><th>Criado em</th><th>Ações</th></tr></thead>';
             html += '<tbody>';
@@ -262,18 +278,24 @@
                 const createdDate = process.created_at ? formatDate(process.created_at) : '<span style="color: #94a3b8;">Data não disponível</span>';
                 // use api_id for deletion if available (backend may expect internal id), but display the public id
                 const deleteTarget = process.api_id || process.id;
+                
+                let actionsHtml = `<button onclick="viewProcessDetails('${escapeHtml(process.id)}')" class="btn btn--secondary" style="padding: 0.5rem 1rem;">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </button>`;
+                
+                // Só adiciona botão de excluir se o usuário tiver permissão
+                if (canDelete) {
+                    actionsHtml += `
+                        <button onclick="deleteProcessConfirm('${escapeHtml(deleteTarget)}','${escapeHtml(process.id)}')" class="btn btn--danger" style="padding: 0.5rem 1rem; margin-left:0.5rem;">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>`;
+                }
+                
                 html += `<tr>
                     <td><strong>${escapeHtml(process.id)}</strong></td>
                     <td>${escapeHtml(process.name)}</td>
                     <td class="col-date">${createdDate}</td>
-                    <td>
-                        <button onclick="viewProcessDetails('${escapeHtml(process.id)}')" class="btn btn--secondary" style="padding: 0.5rem 1rem;">
-                            <i class="fas fa-eye"></i> Ver Detalhes
-                        </button>
-                        <button onclick="deleteProcessConfirm('${escapeHtml(deleteTarget)}','${escapeHtml(process.id)}')" class="btn btn--danger" style="padding: 0.5rem 1rem; margin-left:0.5rem;">
-                            <i class="fas fa-trash"></i> Excluir
-                        </button>
-                    </td>
+                    <td>${actionsHtml}</td>
                 </tr>`;
             });
 

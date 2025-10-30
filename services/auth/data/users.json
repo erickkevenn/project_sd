@@ -1,23 +1,30 @@
 {
-  "admin": {
+  "admin@admin.com": {
     "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "email": "admin@admin.com",
+    "name": "Administrador",
+    "user_type": "admin",
     "roles": [
       "admin",
-      "lawyer",
+      "advogado",
       "user"
     ],
     "permissions": [
       "read",
       "write",
       "delete",
-      "orchestrate"
+      "orchestrate",
+      "create_user"
     ],
-    "office_id": "e91eff737ca2"
+    "office_id": "office-default"
   },
-  "lawyer": {
+  "advogado@advogado.com": {
     "password_hash": "ac3226b60081e5f9f9f1f784838aca038eb7c2f7411cb90702b6c2bfe07a45a9",
+    "email": "advogado@advogado.com",
+    "name": "Advogado Principal",
+    "user_type": "advogado",
     "roles": [
-      "lawyer",
+      "advogado",
       "user"
     ],
     "permissions": [
@@ -25,22 +32,29 @@
       "write",
       "orchestrate"
     ],
-    "office_id": "2d391e7ad9a7"
+    "office_id": "office-default"
   },
-  "intern": {
+  "estagiario@estagiario.com": {
     "password_hash": "534d9b45e4168ad5e7ab39ddde0387982ec6a2a18b992f62738b23fcde72f7e7",
+    "email": "estagiario@estagiario.com",
+    "name": "Estagiário",
+    "user_type": "estagiario",
     "roles": [
+      "estagiario",
       "user"
     ],
     "permissions": [
       "read"
     ],
-    "office_id": "57b3475220a1"
+    "office_id": "office-default"
   },
-  "well": {
-    "password_hash": "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225",
+  "daniel@advogado.com": {
+    "password_hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+    "email": "daniel@advogado.com",
+    "name": "Daniel silva",
+    "user_type": "advogado",
     "roles": [
-      "lawyer",
+      "advogado",
       "user"
     ],
     "permissions": [
@@ -48,6 +62,22 @@
       "write",
       "orchestrate"
     ],
-    "office_id": "24ec9a22f22b"
+    "office_id": "7a48b10fcca0"
+  },
+  "teste@advogado.com": {
+    "password_hash": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f",
+    "email": "teste@advogado.com",
+    "name": "adada",
+    "user_type": "advogado",
+    "roles": [
+      "advogado",
+      "user"
+    ],
+    "permissions": [
+      "read",
+      "write",
+      "orchestrate"
+    ],
+    "office_id": "b32850038cf0"
   }
 }
