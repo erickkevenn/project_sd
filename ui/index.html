@@ -5,6 +5,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JurisFlow - Plataforma de Orquestração Jurídica</title>
+  <style>
+    /* Prevent flash: hide both, then show appropriate section via .auth/.guest */
+    #landingPage { display: none; }
+    #mainUI { display: none; }
+    .guest #landingPage { display: block; }
+    .auth #mainUI { display: block; }
+  </style>
+  <script>
+    // Set class ASAP to avoid flash
+    (function() {
+      try {
+        var hasToken = !!localStorage.getItem('jwtToken');
+        document.documentElement.classList.add(hasToken ? 'auth' : 'guest');
+      } catch (e) {
+        document.documentElement.classList.add('guest');
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="/ui/styles.css">
   <link rel="stylesheet" href="/ui/css/process.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -12,7 +30,7 @@
 
 <body>
   <!-- Landing Page -->
-  <div id="landingPage" class="landing-page">
+  <div id="landingPage" class="landing-page" style="display:none;">
     <!-- Navigation -->
     <nav class="landing-nav">
       <div class="nav-content">

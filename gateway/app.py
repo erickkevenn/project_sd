@@ -342,6 +342,21 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         except GatewayException as e:
             return jsonify({"error": e.message}), e.status_code
     
+    @app.put("/api/documents/<doc_id>")
+    @require_auth
+    @require_permission("write")
+    @limiter.limit("10 per minute")
+    def update_document(doc_id):
+        """Atualiza um documento"""
+        try:
+            payload = request.get_json(force=True)
+            response_data, status_code = service_client.forward_request(
+                "documents", "PUT", f"/documents/{doc_id}", json_body=payload
+            )
+            return jsonify(response_data), status_code
+        except GatewayException as e:
+            return jsonify({"error": e.message}), e.status_code
+    
     @app.delete("/api/documents/<doc_id>")
     @require_auth
     @require_permission("delete")
@@ -540,11 +555,17 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             if not process_id:
                 return jsonify({"error": "Field 'process_id' is required to create a hearing"}), 400
 
-            # Valida existência do processo (busca por número)
+            # Valida existência do processo (aceita número ou ID interno)
             try:
-                proc_resp, proc_status = service_client.forward_request(
-                    "processes", "GET", f"/processes/by-number/{process_id}"
-                )
+                proc_status = None
+                if isinstance(process_id, str) and process_id.strip().upper().startswith('PROC-'):
+                    _, proc_status = service_client.forward_request(
+                        "processes", "GET", f"/processes/by-number/{process_id.strip().upper()}"
+                    )
+                else:
+                    _, proc_status = service_client.forward_request(
+                        "processes", "GET", f"/processes/{process_id}"
+                    )
             except Exception:
                 return jsonify({"error": "Failed to validate process existence"}), 503
 
@@ -628,46 +649,116 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
         try:
             payload = request.get_json(force=True)
             results = {}
-            # Se há definição de processo no payload, cria o processo primeiro
-            used_process_id = None
-            if "process" in payload and isinstance(payload["process"], dict):
+            # Helper: gera próximo número de processo no padrão PROC-XXX
+            def generate_next_process_number() -> str:
                 try:
+                    procs, status = service_client.forward_request("processes", "GET", "/processes")
+                    if status == 200 and isinstance(procs, list):
+                        nums = []
+                        for p in procs:
+                            n = (p.get("number") or "")
+                            if isinstance(n, str) and n.upper().startswith("PROC-") and n[5:].isdigit():
+                                nums.append(int(n[5:]))
+                        next_num = (max(nums) + 1) if nums else 1
+                        return f"PROC-{next_num:03d}"
+                except Exception:
+                    pass
+                return "PROC-001"
+
+            # Se há definição de processo no payload, cria o processo primeiro (garantindo número válido)
+            used_process_number = None
+            process_payload = payload.get("process") if isinstance(payload.get("process"), dict) else None
+            try:
+                # Define número inicial (do payload se válido; senão, próximo disponível do escritório)
+                def next_from(base: str) -> str:
+                    try:
+                        n = int(base[5:])
+                        return f"PROC-{n+1:03d}"
+                    except Exception:
+                        return generate_next_process_number()
+
+                desired_number = None
+                if process_payload:
+                    candidate = str(process_payload.get("number", "")).strip().upper()
+                    if candidate.startswith("PROC-") and candidate[5:].isdigit():
+                        desired_number = candidate
+                if not desired_number:
+                    desired_number = generate_next_process_number()
+
+                attempts = 0
+                max_attempts = 20
+                last_error = None
+                while attempts < max_attempts and used_process_number is None:
+                    body = {
+                        "number": desired_number,
+                        "title": process_payload.get("title") if process_payload and process_payload.get("title") else f"Processo {desired_number}",
+                        "description": process_payload.get("description", "") if process_payload else "",
+                    }
+
                     proc_data, proc_status = service_client.forward_request(
-                        "processes", "POST", "/processes", json_body=payload["process"]
+                        "processes", "POST", "/processes", json_body=body
                     )
                     if proc_status == 201 and isinstance(proc_data, dict):
-                        # microservices retornam o objeto criado
-                        used_process_id = proc_data.get('id')
-                    else:
+                        used_process_number = proc_data.get('number') or desired_number
                         results['process'] = {"status": proc_status, "data": proc_data}
-                except Exception as e:
-                    results['process'] = {"status": "error", "error": str(e)}
+                        break
+                    if proc_status == 409:
+                        # Número global já existe (talvez em outro escritório) → incrementa e tenta de novo
+                        desired_number = next_from(desired_number)
+                        attempts += 1
+                        continue
+                    # Outro erro
+                    last_error = {"status": proc_status, "data": proc_data}
+                    break
 
-            # Helper: valida/obtém process_id para criação de recursos
-            def resolve_and_validate_process_id(item: dict):
-                nonlocal used_process_id
-                pid = item.get('process_id') or used_process_id
+                if used_process_number is None:
+                    results['process'] = last_error or {"status": "error", "data": {"error": "Failed to create process"}}
+            except Exception as e:
+                # Se criação falhar completamente, ainda podemos tentar seguir caso itens tragam process_id válido
+                results['process'] = {"status": "error", "error": str(e)}
+
+            # Helper: valida/normaliza NÚMERO do processo para criação de recursos
+            def resolve_and_validate_process_number(item: dict):
+                nonlocal used_process_number
+                pid = item.get('process_id') or used_process_number
                 if not pid:
                     return None, ({"error": "Field 'process_id' is required for related items"}, 400)
                 try:
+                    # Se parece um número (PROC-xxx), valida via by-number
+                    if isinstance(pid, str) and pid.strip().upper().startswith('PROC-'):
+                        number = pid.strip().upper()
+                        pr, ps = service_client.forward_request("processes", "GET", f"/processes/by-number/{number}")
+                        if ps != 200:
+                            return None, ({"error": f"Process '{number}' not found"}, 404)
+                        used_process_number = number
+                        return number, (None, None)
+                    # Caso contrário, tenta tratar como ID interno e obter o número
                     pr, ps = service_client.forward_request("processes", "GET", f"/processes/{pid}")
+                    if ps != 200 or not isinstance(pr, dict) or not pr.get('number'):
+                        return None, ({"error": "Associated process not found"}, 404)
+                    used_process_number = pr.get('number')
+                    return used_process_number, (None, None)
                 except Exception:
                     return None, ({"error": "Failed to validate process existence"}, 503)
-                if ps != 200:
-                    return None, ({"error": "Associated process not found"}, 404)
-                used_process_id = pid
-                return pid, (None, None)
 
             # Cria documento
             if "document" in payload:
                 try:
                     doc_item = payload["document"]
-                    pid, err = resolve_and_validate_process_id(doc_item)
+                    pid, err = resolve_and_validate_process_number(doc_item)
                     if err[0] is not None:
                         results["document"] = {"status": err[1], "data": err[0]}
                     else:
-                        # assegura que o document payload contenha o process_id usado
-                        doc_item["process_id"] = used_process_id
+                        # Garante que o documento use o NÚMERO do processo
+                        doc_item["process_id"] = used_process_number
+                        # Define autor como usuário logado se ausente ou genérico
+                        try:
+                            current_user = getattr(request, 'current_user', {}) or {}
+                            default_author = current_user.get('name') or current_user.get('email') or "Usuário"
+                            if not doc_item.get("author") or str(doc_item.get("author")).strip().lower() in ("sistema", "system"):
+                                doc_item["author"] = default_author
+                        except Exception:
+                            pass
                         doc_data, doc_status = service_client.forward_request(
                             "documents", "POST", "/documents", json_body=doc_item
                         )
@@ -679,11 +770,11 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             if "deadline" in payload:
                 try:
                     dl_item = payload["deadline"]
-                    pid, err = resolve_and_validate_process_id(dl_item)
+                    pid, err = resolve_and_validate_process_number(dl_item)
                     if err[0] is not None:
                         results["deadline"] = {"status": err[1], "data": err[0]}
                     else:
-                        dl_item["process_id"] = used_process_id
+                        dl_item["process_id"] = used_process_number
                         deadline_data, deadline_status = service_client.forward_request(
                             "deadlines", "POST", "/deadlines", json_body=dl_item
                         )
@@ -695,11 +786,11 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             if "hearing" in payload:
                 try:
                     hr_item = payload["hearing"]
-                    pid, err = resolve_and_validate_process_id(hr_item)
+                    pid, err = resolve_and_validate_process_number(hr_item)
                     if err[0] is not None:
                         results["hearing"] = {"status": err[1], "data": err[0]}
                     else:
-                        hr_item["process_id"] = used_process_id
+                        hr_item["process_id"] = used_process_number
                         hearing_data, hearing_status = service_client.forward_request(
                             "hearings", "POST", "/hearings", json_body=hr_item
                         )

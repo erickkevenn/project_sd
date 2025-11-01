@@ -72,13 +72,21 @@ def create_app() -> Flask:
 
     @app.get("/processes")
     def list_processes():
+        # Filtra por escritório se header presente
+        office_id = request.headers.get("X-Office-ID")
+        if office_id:
+            filtered = [p for p in PROCESSES.values() if p.get("office_id") == office_id]
+            return jsonify(filtered), 200
         return jsonify(list(PROCESSES.values())), 200
 
     @app.get("/processes/by-number/<process_number>")
     def get_process_by_number(process_number: str):
         """Busca processo pelo número (ex: PROC-001) ao invés do ID interno"""
+        office_id = request.headers.get("X-Office-ID")
         for proc in PROCESSES.values():
             if proc.get("number") == process_number:
+                if office_id and proc.get("office_id") != office_id:
+                    break  # não revela existência
                 return jsonify(proc), 200
         return jsonify({"error": "Process not found"}), 404
 
@@ -102,6 +110,7 @@ def create_app() -> Flask:
                 return jsonify({"error": "Já existe um processo com este número. Altere o número e tente novamente."}), 409
 
         proc_id = str(uuid.uuid4())[:8]
+        office_id = request.headers.get("X-Office-ID")
         item = {
             "id": proc_id,
             "number": number,
@@ -110,6 +119,7 @@ def create_app() -> Flask:
             "status": str(data.get("status", "open")),
             "created_at": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat(),
             "updated_at": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-3))).isoformat(),
+            "office_id": office_id,
         }
         PROCESSES[proc_id] = item
         store.save(PROCESSES)
@@ -120,6 +130,9 @@ def create_app() -> Flask:
         item = PROCESSES.get(proc_id)
         if not item:
             return jsonify({"error": "Process not found"}), 404
+        office_id = request.headers.get("X-Office-ID")
+        if office_id and item.get("office_id") != office_id:
+            return jsonify({"error": "Process not found"}), 404
         return jsonify(item), 200
 
     @app.put("/processes/<proc_id>")
@@ -127,7 +140,11 @@ def create_app() -> Flask:
         if proc_id not in PROCESSES:
             return jsonify({"error": "Process not found"}), 404
         data = request.get_json(force=True) or {}
-        item = PROCESSES[proc_id].copy()
+        current = PROCESSES[proc_id]
+        office_id = request.headers.get("X-Office-ID")
+        if office_id and current.get("office_id") != office_id:
+            return jsonify({"error": "Process not found"}), 404
+        item = current.copy()
 
         # Se atualizar o número, valida formato e duplicidade
         if "number" in data:
@@ -150,6 +167,9 @@ def create_app() -> Flask:
     @app.delete("/processes/<proc_id>")
     def delete_process(proc_id: str):
         if proc_id not in PROCESSES:
+            return jsonify({"error": "Process not found"}), 404
+        office_id = request.headers.get("X-Office-ID")
+        if office_id and PROCESSES[proc_id].get("office_id") != office_id:
             return jsonify({"error": "Process not found"}), 404
         deleted = PROCESSES.pop(proc_id)
         store.save(PROCESSES)

@@ -90,10 +90,13 @@ def create_app() -> Flask:
     @app.get("/hearings")
     def list_hearings():
         date = request.args.get("date")
+        process_id = request.args.get("process_id")
         office_id = request.headers.get("X-Office-ID")
         items = HEARINGS
         if date:
-            items = [h for h in HEARINGS if h.get("date") == date]
+            items = [h for h in items if h.get("date") == date]
+        if process_id:
+            items = [h for h in items if h.get("process_id") == process_id]
         if office_id:
             items = [h for h in items if h.get("office_id") == office_id]
         return jsonify({"items": items}), 200
@@ -101,7 +104,8 @@ def create_app() -> Flask:
     @app.get("/hearings/today")
     def hearings_today():
         today = datetime.date.today().isoformat()
-        todays = [h for h in HEARINGS if h.get("date") == today]
+        office_id = request.headers.get("X-Office-ID")
+        todays = [h for h in HEARINGS if h.get("date") == today and (not office_id or h.get("office_id") == office_id)]
         return jsonify({"date": today, "items": todays}), 200
 
     @app.delete("/hearings/<hearing_id>")
