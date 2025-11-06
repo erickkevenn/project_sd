@@ -404,8 +404,9 @@
                 const userNameBox = document.getElementById('userName');
                 const officeNameBox = document.getElementById('officeName');
                 
-                if (userNameBox && data.user && data.user.username) {
-                    userNameBox.textContent = data.user.username;
+                if (userNameBox && data.user) {
+                    const displayName = data.user.name || (data.user.email ? data.user.email.split('@')[0] : null);
+                    if (displayName) userNameBox.textContent = displayName;
                 }
                 
                 if (officeNameBox && data.user && data.user.office) {

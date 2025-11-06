@@ -79,5 +79,24 @@
       "orchestrate"
     ],
     "office_id": "b32850038cf0"
+  },
+  "well@admin.com": {
+    "password_hash": "ed83d8019017b63a1c0157ec52d14f313084ac60ea9849718f804c019282da0e",
+    "email": "well@admin.com",
+    "name": "wellington",
+    "user_type": "admin",
+    "roles": [
+      "admin",
+      "advogado",
+      "user"
+    ],
+    "permissions": [
+      "read",
+      "write",
+      "delete",
+      "orchestrate",
+      "create_user"
+    ],
+    "office_id": "8a983afa1aa7"
   }
 }

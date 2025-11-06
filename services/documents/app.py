@@ -142,8 +142,14 @@ class DocumentsService(BaseService):
                 if doc_id not in self.data_store:
                     return self.create_error_response("Document not found", 404)
 
+                # Enforce office isolation on update
+                office_id = request.headers.get("X-Office-ID")
+                current_doc = self.data_store[doc_id]
+                if office_id and current_doc.get("office_id") != office_id:
+                    return self.create_error_response("Document not found", 404)
+
                 data = request.get_json(force=True)
-                document = self.data_store[doc_id].copy()
+                document = current_doc.copy()
 
                 updatable_fields = ["title", "content", "author", "process_id"]
                 for field in updatable_fields:
