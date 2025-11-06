@@ -8,7 +8,7 @@ import logging
 import os
 from typing import Dict, Any, Optional
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
 class BaseService:
     """Classe base para microserviços"""
@@ -51,7 +51,7 @@ class BaseService:
                 "status": "ok",
                 "service": self.service_name,
                 "count": len(self.data_store),
-                "timestamp": datetime.now(timezone(timedelta(hours=-3))).isoformat()
+                "timestamp": datetime.utcnow().isoformat() + 'Z'
             }, 200
     
     def generate_id(self) -> str:
@@ -80,22 +80,23 @@ class BaseService:
         return jsonify({
             "error": message,
             "service": self.service_name,
-            "timestamp": datetime.now(timezone(timedelta(hours=-3))).isoformat()
+            "timestamp": datetime.utcnow().isoformat() + 'Z'
         }), status_code
     
     def create_success_response(self, data: Any, status_code: int = 200) -> tuple:
         """Cria resposta de sucesso padronizada"""
         if isinstance(data, dict):
             data["service"] = self.service_name
-            data["timestamp"] = datetime.now(timezone(timedelta(hours=-3))).isoformat()
+            data["timestamp"] = datetime.utcnow().isoformat() + 'Z'
         
         return jsonify(data), status_code
     
-    def run(self, debug: bool = True):
+    def run(self, debug: bool = False):
         """Executa o serviço"""
         self.logger.info(f"{self.service_name} Service starting on port {self.port}")
         self.app.run(
             port=self.port,
             host="0.0.0.0",
-            debug=debug
+            debug=debug,
+            use_reloader=False  # Desabilita reloader para evitar duplicação de processos
         )

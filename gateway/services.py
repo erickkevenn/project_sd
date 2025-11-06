@@ -21,6 +21,15 @@ except ImportError:
     GRPC_AVAILABLE = False
     grpc = None
 
+# Configurar retry automático para requests
+from requests.adapters import HTTPAdapter
+try:
+    from urllib3.util.retry import Retry
+    RETRY_AVAILABLE = True
+except ImportError:
+    from requests.packages.urllib3.util.retry import Retry
+    RETRY_AVAILABLE = True
+
 logger = logging.getLogger(__name__)
 config = get_config()
 
@@ -30,6 +39,19 @@ class ServiceClient:
     def __init__(self):
         self.services = config.SERVICES
         self.timeout = config.REQUEST_TIMEOUT
+        
+        # Configurar sessão com retry automático
+        self.session = requests.Session()
+        if RETRY_AVAILABLE:
+            retry_strategy = Retry(
+                total=3,
+                backoff_factor=0.5,
+                status_forcelist=[500, 502, 503, 504],
+                allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST"]
+            )
+            adapter = HTTPAdapter(max_retries=retry_strategy)
+            self.session.mount("http://", adapter)
+            self.session.mount("https://", adapter)
     
     def _get_correlation_id(self) -> str:
         """Gera ou obtém correlation ID"""
@@ -95,7 +117,7 @@ class ServiceClient:
         try:
             logger.info(f"Forwarding {method} request to {service_name}: {url}")
             
-            response = requests.request(
+            response = self.session.request(
                 method=method,
                 url=url,
                 json=json_body,
@@ -125,6 +147,38 @@ class ServiceClient:
         except Exception as e:
             log_security_event("SERVICE_ERROR", f"Error calling {service_name}: {str(e)}")
             raise ServiceUnavailableError(service_name, {"url": url, "reason": str(e)})
+    
+    def validate_process_exists(self, process_id: str) -> tuple:
+        """
+        Valida se um processo existe
+        
+        Args:
+            process_id: Número do processo (PROC-XXX) ou ID interno
+            
+        Returns:
+            Tuple (exists: bool, process_data: dict, error_response: tuple or None)
+        """
+        try:
+            # Determina se é número ou ID
+            if isinstance(process_id, str) and process_id.strip().upper().startswith('PROC-'):
+                resp, status = self.forward_request(
+                    "processes", "GET", f"/processes/by-number/{process_id.strip().upper()}"
+                )
+            else:
+                resp, status = self.forward_request(
+                    "processes", "GET", f"/processes/{process_id}"
+                )
+            
+            if status == 200:
+                return True, resp, None
+            else:
+                error = ({"error": f"Process '{process_id}' not found. Please create the process first."}, 404)
+                return False, {}, error
+                
+        except Exception as e:
+            logger.error(f"Error validating process: {str(e)}")
+            error = ({"error": "Failed to validate process existence"}, 503)
+            return False, {}, error
 
 class HealthChecker:
     """Verificador de saúde dos serviços"""

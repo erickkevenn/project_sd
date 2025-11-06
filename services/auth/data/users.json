@@ -98,5 +98,21 @@
       "create_user"
     ],
     "office_id": "8a983afa1aa7"
+  },
+  "nees@advogado.com": {
+    "password_hash": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f",
+    "email": "nees@advogado.com",
+    "name": "Rafael Amorim",
+    "user_type": "advogado",
+    "roles": [
+      "advogado",
+      "user"
+    ],
+    "permissions": [
+      "read",
+      "write",
+      "orchestrate"
+    ],
+    "office_id": "840f7a93e3f6"
   }
 }

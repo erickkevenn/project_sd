@@ -120,8 +120,8 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     @app.route("/favicon.ico")
     @limiter.exempt
     def favicon():
-        """Favicon vazio"""
-        return "", 204
+        """Serve favicon (logo.svg)"""
+        return send_from_directory(UI_DIR, "logo.svg", mimetype='image/svg+xml')
     
     # === Rotas de Health Check ===
     @app.route("/health")
@@ -299,21 +299,15 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
     def create_document():
         """Cria um novo documento"""
         try:
-            # Verifica obrigatoriedade de `process_id` e existência do processo
+            # Valida obrigatoriedade de `process_id` e existência do processo
             process_id = request.validated_data.get('process_id')
             if not process_id:
                 return jsonify({"error": "Field 'process_id' is required to create a document"}), 400
 
-            # Valida existência do processo no serviço de processos (busca por número)
-            try:
-                proc_resp, proc_status = service_client.forward_request(
-                    "processes", "GET", f"/processes/by-number/{process_id}"
-                )
-            except Exception:
-                return jsonify({"error": "Failed to validate process existence"}), 503
-
-            if proc_status != 200:
-                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+            # Usa função helper para validar processo
+            exists, proc_data, error = service_client.validate_process_exists(process_id)
+            if not exists:
+                return jsonify(error[0]), error[1]
 
             # Verifica se deve usar gRPC
             if getattr(request, 'prefer_grpc', False) and grpc_client.is_available('documents'):
@@ -399,16 +393,10 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             if not process_id:
                 return jsonify({"error": "Field 'process_id' is required to create a deadline"}), 400
 
-            # Valida existência do processo (busca por número)
-            try:
-                proc_resp, proc_status = service_client.forward_request(
-                    "processes", "GET", f"/processes/by-number/{process_id}"
-                )
-            except Exception:
-                return jsonify({"error": "Failed to validate process existence"}), 503
-
-            if proc_status != 200:
-                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+            # Usa função helper para validar processo
+            exists, proc_data, error = service_client.validate_process_exists(process_id)
+            if not exists:
+                return jsonify(error[0]), error[1]
 
             response_data, status_code = service_client.forward_request(
                 "deadlines", "POST", "/deadlines", json_body=request.validated_data
@@ -555,22 +543,10 @@ def register_routes(app, service_client, grpc_client, health_checker, limiter):
             if not process_id:
                 return jsonify({"error": "Field 'process_id' is required to create a hearing"}), 400
 
-            # Valida existência do processo (aceita número ou ID interno)
-            try:
-                proc_status = None
-                if isinstance(process_id, str) and process_id.strip().upper().startswith('PROC-'):
-                    _, proc_status = service_client.forward_request(
-                        "processes", "GET", f"/processes/by-number/{process_id.strip().upper()}"
-                    )
-                else:
-                    _, proc_status = service_client.forward_request(
-                        "processes", "GET", f"/processes/{process_id}"
-                    )
-            except Exception:
-                return jsonify({"error": "Failed to validate process existence"}), 503
-
-            if proc_status != 200:
-                return jsonify({"error": f"Process '{process_id}' not found. Please create the process first."}), 404
+            # Usa função helper para validar processo
+            exists, proc_data, error = service_client.validate_process_exists(process_id)
+            if not exists:
+                return jsonify(error[0]), error[1]
 
             response_data, status_code = service_client.forward_request(
                 "hearings", "POST", "/hearings", json_body=request.validated_data

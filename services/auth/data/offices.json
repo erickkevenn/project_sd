@@ -43,5 +43,14 @@
     "oab_number": "None",
     "email": "well@admin.com",
     "phone": "11999999999"
+  },
+  "840f7a93e3f6": {
+    "id": "840f7a93e3f6",
+    "name": "Nees Associados",
+    "cnpj": "123456789-000",
+    "responsible_name": "Rafael Amorim",
+    "oab_number": "None",
+    "email": "nees@advogado.com",
+    "phone": "0012345678"
   }
 }

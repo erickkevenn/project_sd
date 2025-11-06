@@ -71,16 +71,6 @@
     "created_at": "2025-10-29T21:27:08.608170-03:00",
     "updated_at": "2025-10-29T21:27:08.608184-03:00"
   },
-  "d4855495": {
-    "id": "d4855495",
-    "number": "PROC-01",
-    "title": "Novo",
-    "description": "",
-    "status": "open",
-    "created_at": "2025-11-01T16:45:17.877826-03:00",
-    "updated_at": "2025-11-01T16:45:17.877855-03:00",
-    "office_id": "office-default"
-  },
   "8d39bfe3": {
     "id": "8d39bfe3",
     "number": "PROC-02",
@@ -130,5 +120,15 @@
     "created_at": "2025-11-01T17:23:10.777648-03:00",
     "updated_at": "2025-11-01T17:23:10.777676-03:00",
     "office_id": "8a983afa1aa7"
+  },
+  "c9ae47be": {
+    "id": "c9ae47be",
+    "number": "PROC-003",
+    "title": "Processo PROC-003",
+    "description": "",
+    "status": "open",
+    "created_at": "2025-11-05T21:34:44.363071-03:00",
+    "updated_at": "2025-11-05T21:34:44.363095-03:00",
+    "office_id": "office-default"
   }
 }
